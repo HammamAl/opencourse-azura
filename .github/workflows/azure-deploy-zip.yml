@@ -41,14 +41,30 @@ jobs:
           # Copy standalone server and its dependencies
           cp -r .next/standalone/* deploy/
 
-          # Copy static assets
+          # Copy static assets to the correct location
           mkdir -p deploy/.next/static
           cp -r .next/static/* deploy/.next/static/
 
           # Copy public assets if they exist
           if [ -d "public" ]; then
-            cp -r public deploy/
+            cp -r public/* deploy/public/ 2>/dev/null || mkdir -p deploy/public
           fi
+
+          # Create a proper package.json for Azure
+          cat > deploy/package.json << 'EOF'
+          {
+            "name": "hammamal-elearning-app",
+            "version": "1.0.0",
+            "description": "E-Learning App",
+            "main": "server.js",
+            "scripts": {
+              "start": "node server.js"
+            },
+            "engines": {
+              "node": ">=18.0.0"
+            }
+          }
+          EOF
 
           # Create the ZIP from the deploy directory
           cd deploy

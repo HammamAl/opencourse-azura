@@ -35,7 +35,7 @@ const nextConfig: NextConfig = {
     ],
   },
   // Azure App Service optimization
-  trailingSlash: false,
+  trailingSlash: true,
   poweredByHeader: false,
   compress: true,
   generateEtags: false,
