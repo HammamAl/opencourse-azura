@@ -7,11 +7,12 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: hammamal-elearning-app-prod
-  NODE_VERSION: "20.x"
+  NODE_VERSION: "20.x" # Using a consistent and stable LTS version
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: "Checkout GitHub Action"
         uses: actions/checkout@v4
@@ -27,6 +28,11 @@ jobs:
 
       - name: "Generate Prisma Client"
         run: npx prisma generate
+
+      - name: "Handle Database Migration"
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: "Build Next.js application"
         run: npm run build
