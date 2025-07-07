@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: hammamal-elearning-app-prod # Your app name
+  AZURE_WEBAPP_NAME: hammamal-elearning-app-prod
   NODE_VERSION: "20.x"
 
 jobs:
@@ -29,15 +29,30 @@ jobs:
         run: npx prisma generate
 
       - name: "Build Next.js application"
-        # The 'standalone' output option in next.config.ts creates a .next/standalone folder
         run: npm run build
         env:
           NODE_ENV: production
 
-      - name: "Create ZIP package from standalone output"
+      - name: "Prepare deployment package"
         run: |
-          cd .next/standalone
-          zip -r ../../deployment.zip .
+          # Create deployment directory
+          mkdir -p deploy
+
+          # Copy standalone server and its dependencies
+          cp -r .next/standalone/* deploy/
+
+          # Copy static assets
+          mkdir -p deploy/.next/static
+          cp -r .next/static/* deploy/.next/static/
+
+          # Copy public assets if they exist
+          if [ -d "public" ]; then
+            cp -r public deploy/
+          fi
+
+          # Create the ZIP from the deploy directory
+          cd deploy
+          zip -r ../deployment.zip .
 
       - name: "Deploy to Azure Web App"
         uses: azure/webapps-deploy@v3
