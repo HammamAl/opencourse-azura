@@ -9,7 +9,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: hammamal-elearning-app-prod
-  NODE_VERSION: "20.x" # Changed from 22.16.0 for better Azure compatibility
+  NODE_VERSION: "20.x" # Changed from 22.16.0 for better compatibility
   AZURE_WEBAPP_PACKAGE_PATH: "."
 
 jobs:
@@ -128,19 +128,68 @@ jobs:
           </configuration>
           EOF
 
-      - name: "Deploy to Azure Web App"
+      - name: "Stop Azure Web App (to prevent conflicts)"
+        uses: azure/CLI@v1
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az webapp stop --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group $(az webapp show --name ${{ env.AZURE_WEBAPP_NAME }} --query resourceGroup -o tsv) || echo "Failed to stop app, continuing..."
+        continue-on-error: true
+
+      - name: "Wait for app to stop"
+        run: sleep 30
+
+      - name: "Deploy to Azure Web App (with retry)"
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./deployment
+          clean: true
+          restart: true
+        timeout-minutes: 10
+        continue-on-error: true
+        id: deploy_attempt_1
+
+      - name: "Retry deployment if first attempt failed"
+        if: steps.deploy_attempt_1.outcome == 'failure'
+        run: |
+          echo "First deployment attempt failed, waiting 60 seconds before retry..."
+          sleep 60
+
+      - name: "Deploy to Azure Web App (Retry Attempt)"
+        if: steps.deploy_attempt_1.outcome == 'failure'
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./deployment
+          clean: true
+          restart: true
+        timeout-minutes: 10
+
+      - name: "Start Azure Web App"
+        uses: azure/CLI@v1
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az webapp start --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group $(az webapp show --name ${{ env.AZURE_WEBAPP_NAME }} --query resourceGroup -o tsv) || echo "Failed to start app, it may start automatically"
+        continue-on-error: true
 
       - name: "Post-deployment health check"
         run: |
           echo "Waiting for deployment to be ready..."
-          sleep 45
+          sleep 60
           echo "Checking deployment health..."
-          curl -f https://hammamal-elearning-app-prod-fvdua8defrgnece3.indonesiacentral-01.azurewebsites.net/ || echo "Health check failed, but deployment may still be starting"
+          for i in {1..5}; do
+            if curl -f -s --max-time 30 https://hammamal-elearning-app-prod-fvdua8defrgnece3.indonesiacentral-01.azurewebsites.net/; then
+              echo "Health check passed!"
+              break
+            else
+              echo "Health check attempt $i failed, retrying in 30 seconds..."
+              sleep 30
+            fi
+          done
 
       - name: "Deployment Summary"
         run: |
