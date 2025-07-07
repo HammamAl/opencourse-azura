@@ -1,21 +1,17 @@
-name: Deploy E-Learning App to Azure
+name: Deploy E-Learning App to Azure (ZIP)
 
 on:
   push:
     branches: [main, master]
-  pull_request:
-    branches: [main, master]
-    types: [closed]
+  workflow_dispatch:
 
 env:
   AZURE_WEBAPP_NAME: hammamal-elearning-app-prod
-  NODE_VERSION: "20.x" # Changed from 22.16.0 for better compatibility
-  AZURE_WEBAPP_PACKAGE_PATH: "."
+  NODE_VERSION: "20.x"
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
 
     steps:
       - name: "Checkout GitHub Action"
@@ -27,14 +23,6 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
-      - name: Cache node modules
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Install dependencies
         run: npm ci
 
@@ -45,7 +33,6 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
-          # Add placeholder values for build-time environment variables
           AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=https;AccountName=placeholder;AccountKey=placeholder;EndpointSuffix=core.windows.net"
           DATABASE_URL: "postgresql://user:password@localhost:5432/database"
           NEXTAUTH_SECRET: "placeholder-secret-key"
@@ -53,14 +40,25 @@ jobs:
           SENDGRID_API_KEY: "placeholder"
           NEXT_PUBLIC_AZURE_IMAGE_URL: "https://placeholder.blob.core.windows.net"
 
-      - name: Remove dev dependencies
-        run: npm prune --production
-
-      - name: Create deployment package
+      - name: Create deployment package and ZIP
         run: |
-          # Create a clean deployment directory
+          # Remove dev dependencies and clean up
+          npm prune --production
+
+          # Clean up node_modules
+          find node_modules -name "*.md" -delete
+          find node_modules -name "*.txt" -delete
+          find node_modules -name "*.map" -delete
+          find node_modules -name "CHANGELOG*" -delete
+          find node_modules -name "README*" -delete
+          find node_modules -name "LICENSE*" -delete
+          find node_modules -name "*.d.ts" -delete
+          find node_modules -name "test" -type d -exec rm -rf {} + 2>/dev/null || true
+          find node_modules -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
+          find node_modules -name "docs" -type d -exec rm -rf {} + 2>/dev/null || true
+          find node_modules -name "examples" -type d -exec rm -rf {} + 2>/dev/null || true
+
           mkdir -p deployment
-          # Copy necessary files for production
           cp -r .next deployment/
           cp -r public deployment/
           cp -r node_modules deployment/
@@ -70,7 +68,7 @@ jobs:
           cp -r generated deployment/ || true
           cp -r lib deployment/
 
-          # Create server.js for Azure App Service
+          # Create server.js
           cat > deployment/server.js << 'EOF'
           const { createServer } = require('http');
           const { parse } = require('url');
@@ -100,7 +98,7 @@ jobs:
           });
           EOF
 
-          # Create web.config for Azure
+          # Create web.config
           cat > deployment/web.config << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>
           <configuration>
@@ -128,58 +126,29 @@ jobs:
           </configuration>
           EOF
 
-      - name: "Stop Azure Web App (to prevent conflicts)"
-        uses: azure/CLI@v1
-        with:
-          azcliversion: latest
-          inlineScript: |
-            az webapp stop --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group $(az webapp show --name ${{ env.AZURE_WEBAPP_NAME }} --query resourceGroup -o tsv) || echo "Failed to stop app, continuing..."
-        continue-on-error: true
+          # Create ZIP file
+          echo "Creating ZIP package..."
+          cd deployment
+          zip -r -9 ../deployment.zip . -x "*.git*" "*.DS_Store*" "node_modules/*/test/*" "node_modules/*/tests/*"
+          cd ..
 
-      - name: "Wait for app to stop"
-        run: sleep 30
+          echo "ZIP package created:"
+          ls -lh deployment.zip
 
-      - name: "Deploy to Azure Web App (with retry)"
+      - name: "Deploy to Azure Web App using ZIP"
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ./deployment
+          package: ./deployment.zip
+          type: zip
           clean: true
-          restart: true
-        timeout-minutes: 10
-        continue-on-error: true
-        id: deploy_attempt_1
-
-      - name: "Retry deployment if first attempt failed"
-        if: steps.deploy_attempt_1.outcome == 'failure'
-        run: |
-          echo "First deployment attempt failed, waiting 60 seconds before retry..."
-          sleep 60
-
-      - name: "Deploy to Azure Web App (Retry Attempt)"
-        if: steps.deploy_attempt_1.outcome == 'failure'
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ./deployment
-          clean: true
-          restart: true
-        timeout-minutes: 10
-
-      - name: "Start Azure Web App"
-        uses: azure/CLI@v1
-        with:
-          azcliversion: latest
-          inlineScript: |
-            az webapp start --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group $(az webapp show --name ${{ env.AZURE_WEBAPP_NAME }} --query resourceGroup -o tsv) || echo "Failed to start app, it may start automatically"
-        continue-on-error: true
+        timeout-minutes: 30
 
       - name: "Post-deployment health check"
         run: |
           echo "Waiting for deployment to be ready..."
-          sleep 60
+          sleep 90
           echo "Checking deployment health..."
           for i in {1..5}; do
             if curl -f -s --max-time 30 https://hammamal-elearning-app-prod-fvdua8defrgnece3.indonesiacentral-01.azurewebsites.net/; then
