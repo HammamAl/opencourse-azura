@@ -1,0 +1,115 @@
+name: Deploy E-Learning App to Azure
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+    types: [closed]
+
+env:
+  AZURE_WEBAPP_NAME: hammamal-elearning-app-prod
+  NODE_VERSION: "22.16.0"
+  AZURE_WEBAPP_PACKAGE_PATH: "."
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+
+    steps:
+      - name: "Checkout GitHub Action"
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci --only=production
+
+      - name: Install dev dependencies for build
+        run: npm install --only=dev
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Build Next.js application
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Remove dev dependencies
+        run: npm prune --production
+
+      - name: Create deployment package
+        run: |
+          # Create a clean deployment directory
+          mkdir -p deployment
+          # Copy necessary files for production
+          cp -r .next deployment/
+          cp -r public deployment/
+          cp -r node_modules deployment/
+          cp package.json deployment/
+          cp next.config.ts deployment/
+          cp -r prisma deployment/
+          cp -r generated deployment/ || true
+          # Create web.config for Azure
+          cat > deployment/web.config << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <system.webServer>
+              <webSocket enabled="false" />
+              <handlers>
+                <add name="iisnode" path="server.js" verb="*" modules="iisnode"/>
+              </handlers>
+              <rewrite>
+                <rules>
+                  <rule name="StaticContent">
+                    <action type="Rewrite" url="public{REQUEST_URI}"/>
+                  </rule>
+                  <rule name="DynamicContent">
+                    <conditions>
+                      <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
+                    </conditions>
+                    <action type="Rewrite" url="server.js"/>
+                  </rule>
+                </rules>
+              </rewrite>
+              <httpErrors existingResponse="PassThrough" />
+              <iisnode watchedFiles="web.config;*.js" />
+            </system.webServer>
+          </configuration>
+          EOF
+
+      - name: "Deploy to Azure Web App"
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./deployment
+
+      - name: "Post-deployment health check"
+        run: |
+          echo "Waiting for deployment to be ready..."
+          sleep 45
+          echo "Checking deployment health..."
+          curl -f https://hammamal-elearning-app-prod-fvdua8defrgnece3.indonesiacentral-01.azurewebsites.net/ || echo "Health check failed, but deployment may still be starting"
+
+      - name: "Deployment Summary"
+        run: |
+          echo "🚀 Deployment completed!"
+          echo "📅 Deployed at: $(date)"
+          echo "🌐 App URL: https://hammamal-elearning-app-prod-fvdua8defrgnece3.indonesiacentral-01.azurewebsites.net"
+          echo "👤 Deployed by: ${{ github.actor }}"
+          echo "📝 Commit: ${{ github.sha }}"

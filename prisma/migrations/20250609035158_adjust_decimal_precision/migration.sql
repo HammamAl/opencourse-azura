@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "course" ALTER COLUMN "price" SET DATA TYPE DECIMAL(12,2);
+
+-- AlterTable
+ALTER TABLE "payment" ALTER COLUMN "amount" SET DATA TYPE DECIMAL(12,2);
