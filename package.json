@@ -15,7 +15,9 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:status": "prisma migrate status",
+    "db:reset": "prisma migrate reset",
+    "db:baseline": "prisma migrate resolve --applied"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.27.0",
