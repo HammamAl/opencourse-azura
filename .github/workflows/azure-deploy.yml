@@ -9,7 +9,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: hammamal-elearning-app-prod
-  NODE_VERSION: "22.16.0"
+  NODE_VERSION: "20.x" # Changed from 22.16.0 for better Azure compatibility
   AZURE_WEBAPP_PACKAGE_PATH: "."
 
 jobs:
@@ -28,7 +28,7 @@ jobs:
           cache: "npm"
 
       - name: Cache node modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
@@ -36,10 +36,7 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install dependencies
-        run: npm ci --only=production
-
-      - name: Install dev dependencies for build
-        run: npm install --only=dev
+        run: npm ci
 
       - name: Generate Prisma Client
         run: npx prisma generate
@@ -48,6 +45,13 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          # Add placeholder values for build-time environment variables
+          AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=https;AccountName=placeholder;AccountKey=placeholder;EndpointSuffix=core.windows.net"
+          DATABASE_URL: "postgresql://user:password@localhost:5432/database"
+          NEXTAUTH_SECRET: "placeholder-secret-key"
+          NEXTAUTH_URL: "https://placeholder.com"
+          SENDGRID_API_KEY: "placeholder"
+          NEXT_PUBLIC_AZURE_IMAGE_URL: "https://placeholder.blob.core.windows.net"
 
       - name: Remove dev dependencies
         run: npm prune --production
@@ -64,6 +68,38 @@ jobs:
           cp next.config.ts deployment/
           cp -r prisma deployment/
           cp -r generated deployment/ || true
+          cp -r lib deployment/
+
+          # Create server.js for Azure App Service
+          cat > deployment/server.js << 'EOF'
+          const { createServer } = require('http');
+          const { parse } = require('url');
+          const next = require('next');
+
+          const dev = process.env.NODE_ENV !== 'production';
+          const hostname = process.env.HOSTNAME || 'localhost';
+          const port = process.env.PORT || 3000;
+
+          const app = next({ dev, hostname, port });
+          const handle = app.getRequestHandler();
+
+          app.prepare().then(() => {
+            createServer(async (req, res) => {
+              try {
+                const parsedUrl = parse(req.url, true);
+                await handle(req, res, parsedUrl);
+              } catch (err) {
+                console.error('Error occurred handling', req.url, err);
+                res.statusCode = 500;
+                res.end('Internal server error');
+              }
+            }).listen(port, (err) => {
+              if (err) throw err;
+              console.log(`> Ready on http://${hostname}:${port}`);
+            });
+          });
+          EOF
+
           # Create web.config for Azure
           cat > deployment/web.config << 'EOF'
           <?xml version="1.0" encoding="utf-8"?>

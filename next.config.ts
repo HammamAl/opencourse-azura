@@ -1,7 +1,11 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import { NextConfig } from "next";
+import { Configuration } from "webpack";
+
+const nextConfig: NextConfig = {
   output: "standalone",
-  experimental: {},
+  experimental: {
+    serverComponentsExternalPackages: ["@azure/storage-blob"],
+  },
   images: {
     remotePatterns: [
       {
@@ -38,18 +42,20 @@ const nextConfig = {
   httpAgentOptions: {
     keepAlive: true,
   },
-  serverRuntimeConfig: {
-    // Will only be available on the server side
-  },
-  publicRuntimeConfig: {
-    // Will be available on both server and client
-  },
   // Skip build-time execution of API routes
   typescript: {
     ignoreBuildErrors: false,
   },
   eslint: {
     ignoreDuringBuilds: false,
+  },
+  // Webpack configuration for Azure Blob Storage
+  webpack: (config: Configuration, { isServer }: { isServer: boolean }) => {
+    if (isServer) {
+      // Externalize Azure SDK to prevent build issues
+      config.externals = [...(Array.isArray(config.externals) ? config.externals : []), "@azure/storage-blob"];
+    }
+    return config;
   },
 };
 
