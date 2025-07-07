@@ -30,7 +30,12 @@ jobs:
         run: npx prisma generate
 
       - name: "Handle Database Migration"
-        run: npx prisma migrate deploy
+        run: |
+          # This command creates the migrations table and marks all existing migrations as applied.
+          npx prisma migrate resolve --applied $(ls prisma/migrations | sort | head -n 1)
+
+          # This command will then apply any new migrations that are not yet in the database.
+          npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
