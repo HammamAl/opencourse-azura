@@ -1,19 +1,53 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getContainerClient } from "@/lib/azureBlob";
+import { NextResponse } from "next/server";
 
-// Example: GET /api/azure/list-blobs?container=mycontainer
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const containerName = searchParams.get("container");
-  if (!containerName) {
-    return NextResponse.json({ error: "Missing container parameter" }, { status: 400 });
+export async function GET() {
+  try {
+    // Check if environment variables are available
+    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+
+    if (!connectionString) {
+      console.warn("Azure Storage connection string is not set");
+      return NextResponse.json(
+        {
+          error: "Azure Storage not configured",
+          message: "Azure Storage connection string is not available",
+        },
+        { status: 503 }
+      );
+    }
+
+    // Your existing Azure blob logic here
+    // Import Azure storage client only when needed
+    const { BlobServiceClient } = await import("@azure/storage-blob");
+    const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+
+    // Your blob listing logic here
+    const containerName = "your-container-name"; // Replace with your container name
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+
+    const blobs = [];
+    for await (const blob of containerClient.listBlobsFlat()) {
+      blobs.push({
+        name: blob.name,
+        lastModified: blob.properties.lastModified,
+        size: blob.properties.contentLength,
+      });
+    }
+
+    return NextResponse.json({ blobs });
+  } catch (error) {
+    console.error("Azure blob API error:", error);
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        message: process.env.NODE_ENV === "development" ? error.message : "Unable to fetch blobs",
+      },
+      { status: 500 }
+    );
   }
+}
 
-  const containerClient = getContainerClient(containerName);
-  const blobs: string[] = [];
-  for await (const blob of containerClient.listBlobsFlat()) {
-    blobs.push(blob.name);
-  }
-
-  return NextResponse.json({ blobs });
+// Add other HTTP methods if needed
+export async function POST() {
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
 }

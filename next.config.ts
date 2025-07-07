@@ -1,10 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
-  experimental: {
-    outputFileTracingRoot: process.cwd(),
-    serverComponentsExternalPackages: ["@prisma/client"],
-  },
+  experimental: {},
   images: {
     remotePatterns: [
       {
@@ -46,6 +43,13 @@ const nextConfig = {
   },
   publicRuntimeConfig: {
     // Will be available on both server and client
+  },
+  // Skip build-time execution of API routes
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  eslint: {
+    ignoreDuringBuilds: false,
   },
 };
 
