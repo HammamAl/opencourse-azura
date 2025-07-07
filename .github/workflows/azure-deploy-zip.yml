@@ -1,169 +1,47 @@
-name: Deploy E-Learning App to Azure (ZIP)
+name: Build and Deploy E-Learning App to Azure
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: hammamal-elearning-app-prod
+  AZURE_WEBAPP_NAME: hammamal-elearning-app-prod # Your app name
   NODE_VERSION: "20.x"
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: "Checkout GitHub Action"
         uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ env.NODE_VERSION }}
+      - name: "Setup Node.js ${{ env.NODE_VERSION }}"
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
-      - name: Install dependencies
+      - name: "Install dependencies"
         run: npm ci
 
-      - name: Generate Prisma Client
+      - name: "Generate Prisma Client"
         run: npx prisma generate
 
-      - name: Build Next.js application
+      - name: "Build Next.js application"
+        # The 'standalone' output option in next.config.ts creates a .next/standalone folder
         run: npm run build
         env:
           NODE_ENV: production
-          AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=https;AccountName=placeholder;AccountKey=placeholder;EndpointSuffix=core.windows.net"
-          DATABASE_URL: "postgresql://user:password@localhost:5432/database"
-          NEXTAUTH_SECRET: "placeholder-secret-key"
-          NEXTAUTH_URL: "https://placeholder.com"
-          SENDGRID_API_KEY: "placeholder"
-          NEXT_PUBLIC_AZURE_IMAGE_URL: "https://placeholder.blob.core.windows.net"
 
-      - name: Create deployment package and ZIP
+      - name: "Create ZIP package from standalone output"
         run: |
-          # Remove dev dependencies and clean up
-          npm prune --production
+          cd .next/standalone
+          zip -r ../../deployment.zip .
 
-          # Clean up node_modules
-          find node_modules -name "*.md" -delete
-          find node_modules -name "*.txt" -delete
-          find node_modules -name "*.map" -delete
-          find node_modules -name "CHANGELOG*" -delete
-          find node_modules -name "README*" -delete
-          find node_modules -name "LICENSE*" -delete
-          find node_modules -name "*.d.ts" -delete
-          find node_modules -name "test" -type d -exec rm -rf {} + 2>/dev/null || true
-          find node_modules -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
-          find node_modules -name "docs" -type d -exec rm -rf {} + 2>/dev/null || true
-          find node_modules -name "examples" -type d -exec rm -rf {} + 2>/dev/null || true
-
-          mkdir -p deployment
-          cp -r .next deployment/
-          cp -r public deployment/
-          cp -r node_modules deployment/
-          cp package.json deployment/
-          cp next.config.ts deployment/
-          cp -r prisma deployment/
-          cp -r generated deployment/ || true
-          cp -r lib deployment/
-
-          # Create server.js
-          cat > deployment/server.js << 'EOF'
-          const { createServer } = require('http');
-          const { parse } = require('url');
-          const next = require('next');
-
-          const dev = process.env.NODE_ENV !== 'production';
-          const hostname = process.env.HOSTNAME || 'localhost';
-          const port = process.env.PORT || 3000;
-
-          const app = next({ dev, hostname, port });
-          const handle = app.getRequestHandler();
-
-          app.prepare().then(() => {
-            createServer(async (req, res) => {
-              try {
-                const parsedUrl = parse(req.url, true);
-                await handle(req, res, parsedUrl);
-              } catch (err) {
-                console.error('Error occurred handling', req.url, err);
-                res.statusCode = 500;
-                res.end('Internal server error');
-              }
-            }).listen(port, (err) => {
-              if (err) throw err;
-              console.log(`> Ready on http://${hostname}:${port}`);
-            });
-          });
-          EOF
-
-          # Create web.config
-          cat > deployment/web.config << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <configuration>
-            <system.webServer>
-              <webSocket enabled="false" />
-              <handlers>
-                <add name="iisnode" path="server.js" verb="*" modules="iisnode"/>
-              </handlers>
-              <rewrite>
-                <rules>
-                  <rule name="StaticContent">
-                    <action type="Rewrite" url="public{REQUEST_URI}"/>
-                  </rule>
-                  <rule name="DynamicContent">
-                    <conditions>
-                      <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="True"/>
-                    </conditions>
-                    <action type="Rewrite" url="server.js"/>
-                  </rule>
-                </rules>
-              </rewrite>
-              <httpErrors existingResponse="PassThrough" />
-              <iisnode watchedFiles="web.config;*.js" />
-            </system.webServer>
-          </configuration>
-          EOF
-
-          # Create ZIP file
-          echo "Creating ZIP package..."
-          cd deployment
-          zip -r -9 ../deployment.zip . -x "*.git*" "*.DS_Store*" "node_modules/*/test/*" "node_modules/*/tests/*"
-          cd ..
-
-          echo "ZIP package created:"
-          ls -lh deployment.zip
-
-      - name: "Deploy to Azure Web App using ZIP"
+      - name: "Deploy to Azure Web App"
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./deployment.zip
-          type: zip
-          clean: true
-        timeout-minutes: 30
-
-      - name: "Post-deployment health check"
-        run: |
-          echo "Waiting for deployment to be ready..."
-          sleep 90
-          echo "Checking deployment health..."
-          for i in {1..5}; do
-            if curl -f -s --max-time 30 https://hammamal-elearning-app-prod-fvdua8defrgnece3.indonesiacentral-01.azurewebsites.net/; then
-              echo "Health check passed!"
-              break
-            else
-              echo "Health check attempt $i failed, retrying in 30 seconds..."
-              sleep 30
-            fi
-          done
-
-      - name: "Deployment Summary"
-        run: |
-          echo "🚀 Deployment completed!"
-          echo "📅 Deployed at: $(date)"
-          echo "🌐 App URL: https://hammamal-elearning-app-prod-fvdua8defrgnece3.indonesiacentral-01.azurewebsites.net"
-          echo "👤 Deployed by: ${{ github.actor }}"
-          echo "📝 Commit: ${{ github.sha }}"
