@@ -87,26 +87,10 @@ jobs:
       - name: Remove dev dependencies
         run: npm prune --production
 
-      - name: Create deployment package
+      - name: Create deployment package for traditional start
         run: |
-          # Create the main deployment directory
-          mkdir -p deployment
-
-          # Copy the standalone server files
-          cp -r .next/standalone/* deployment/
-
-          # Create the .next directory inside deployment, then copy static assets
-          mkdir -p deployment/.next
-          cp -r .next/static deployment/.next/static
-
-          # Copy public assets if they exist
-          if [ -d "public" ]; then
-            cp -r public deployment/
-          fi
-
-          # Create the ZIP from inside the deploy directory
-          cd deployment
-          zip -r ../deployment.zip .
+          # Create a zip archive with all necessary files for 'next start'
+          zip -r deployment.zip .next public node_modules package.json next.config.ts
 
       - name: "Deploy to Azure Web App"
         uses: azure/webapps-deploy@v3
