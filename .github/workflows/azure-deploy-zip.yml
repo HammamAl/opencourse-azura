@@ -35,34 +35,15 @@ jobs:
 
       - name: "Prepare deployment package"
         run: |
-          # Create the main deployment directory
           mkdir -p deployment
-
-          # Copy the standalone server files
           cp -r .next/standalone/* deployment/
-
-          # Create the .next directory inside deployment, then copy static assets
           mkdir -p deployment/.next
           cp -r .next/static deployment/.next/static
-
-          # Copy public assets if they exist
           if [ -d "public" ]; then
             cp -r public deployment/
           fi
-
-          # Create the ZIP from inside the deploy directory
           cd deployment
           zip -r ../deployment.zip .
-
-      - name: "Login to Azure"
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }} # Recommended to use Azure login action
-
-      - name: "Set startup command"
-        run: |
-          az webapp config set --resource-group rg-hammamal-elearning-prod --name ${{ env.AZURE_WEBAPP_NAME }} --startup-file "node server.js"
-        # Replace <YOUR_RESOURCE_GROUP> with the name of your resource group
 
       - name: "Deploy to Azure Web App"
         uses: azure/webapps-deploy@v3
