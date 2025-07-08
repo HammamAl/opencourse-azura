@@ -11,6 +11,25 @@ const routeRoleMap: Record<string, UserRole[]> = {
   "/l": ["lecturer"],
 };
 
+// Define public routes that don't require authentication
+const publicRoutes = [
+  "/",
+  "/login",
+  "/register",
+  "/reset",
+  "/reset-password",
+  "/course", // Public course viewing
+  "/api/auth/register",
+  "/api/auth/signin",
+  "/api/auth/callback",
+  "/api/auth/session",
+  "/api/auth/providers",
+  "/api/auth/csrf",
+  "/unauthorized",
+  "/api/health",
+  "/health",
+];
+
 // Helper function to get dashboard URL based on role
 function getDashboardUrl(role: UserRole): string {
   switch (role) {
@@ -22,6 +41,16 @@ function getDashboardUrl(role: UserRole): string {
     default:
       return "/s/dash";
   }
+}
+
+// Helper function to check if a route is public
+function isPublicRoute(pathname: string): boolean {
+  return publicRoutes.some((route) => {
+    if (route === "/") {
+      return pathname === "/";
+    }
+    return pathname.startsWith(route);
+  });
 }
 
 // Helper function to handle domain redirects
@@ -78,8 +107,9 @@ export async function middleware(request: NextRequest) {
     return domainRedirect;
   }
 
-  // Skip authentication for health check endpoints
   const { pathname } = request.nextUrl;
+
+  // Skip authentication for health check endpoints
   if (pathname === "/api/health" || pathname === "/health") {
     const response = NextResponse.next();
     addSecurityHeaders(response);
@@ -92,36 +122,29 @@ export async function middleware(request: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET,
   });
 
-  // Handle login page access
-  if (pathname === "/login") {
-    // If user is already authenticated, redirect to their dashboard
-    if (token) {
+  // Handle public routes (including register page)
+  if (isPublicRoute(pathname)) {
+    // Special handling for login and register pages when user is already authenticated
+    if ((pathname === "/login" || pathname === "/register") && token) {
       const userRole = token.role as UserRole;
       const dashboardUrl = getDashboardUrl(userRole);
       return NextResponse.redirect(new URL(dashboardUrl, request.url));
     }
-    // If not authenticated, allow access to login page
+
+    // Handle root path redirect for authenticated users
+    if (pathname === "/" && token) {
+      const userRole = token.role as UserRole;
+      const dashboardUrl = getDashboardUrl(userRole);
+      return NextResponse.redirect(new URL(dashboardUrl, request.url));
+    }
+
+    // Allow access to public routes
     const response = NextResponse.next();
     addSecurityHeaders(response);
     return response;
   }
 
-  // Handle root path redirect
-  if (pathname === "/") {
-    if (token) {
-      const userRole = token.role as UserRole;
-      const dashboardUrl = getDashboardUrl(userRole);
-      return NextResponse.redirect(new URL(dashboardUrl, request.url));
-    }
-    // If not authenticated, allow access to home page or redirect to login
-    // Uncomment the line below if you want to redirect to login
-    // return NextResponse.redirect(new URL("/login", request.url));
-    const response = NextResponse.next();
-    addSecurityHeaders(response);
-    return response;
-  }
-
-  // If no token (not authenticated), redirect to login for protected routes
+  // If no token (not authenticated) and trying to access protected routes, redirect to login
   if (!token) {
     const loginUrl = new URL("/login", request.url);
     // Add the current path as a callback URL so user can be redirected back after login
@@ -147,9 +170,11 @@ export async function middleware(request: NextRequest) {
 
   // Add custom headers to track user info and security
   const response = NextResponse.next();
-  response.headers.set("x-user-role", (token.role as string) || "unknown");
-  response.headers.set("x-user-id", token.id || "unknown");
-  response.headers.set("x-deployment-timestamp", "2025-07-07 11:32:34");
+  if (token) {
+    response.headers.set("x-user-role", (token.role as string) || "unknown");
+    response.headers.set("x-user-id", token.id || "unknown");
+  }
+  response.headers.set("x-deployment-timestamp", "2025-07-08 05:02:40");
   response.headers.set("x-deployed-by", "HammamAl");
 
   // Add security headers
@@ -167,16 +192,23 @@ export const config = {
     "/login",
     // Add register page to matcher
     "/register",
+    // Add reset password pages
+    "/reset",
+    "/reset-password",
+    // Add course pages (public)
+    "/course/:path*",
     // Match all admin routes
     "/a/:path*",
     // Match all user routes
     "/s/:path*",
     // Match all lecturer routes
     "/l/:path*",
+    // Add unauthorized page
+    "/unauthorized",
     // Add health check endpoints
     "/api/health",
     "/health",
-    // Exclude static files and API routes (except health check)
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    // Exclude static files and most API routes (except auth)
+    "/((?!api/(?!auth)|_next/static|_next/image|favicon.ico|public).*)",
   ],
 };
