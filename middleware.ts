@@ -165,6 +165,8 @@ export const config = {
     "/",
     // Add login page to matcher
     "/login",
+    // Add register page to matcher
+    "/register",
     // Match all admin routes
     "/a/:path*",
     // Match all user routes
