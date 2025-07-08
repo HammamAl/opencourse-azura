@@ -34,25 +34,63 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Azure App Service optimization
-  trailingSlash: true,
+  // IMPORTANT: Remove trailing slash for Azure deployment
+  trailingSlash: false,
   poweredByHeader: false,
   compress: true,
   generateEtags: false,
   httpAgentOptions: {
     keepAlive: true,
   },
-  // Skip build-time execution of API routes
+  // Add proper redirects to handle any existing trailing slash URLs
+  async redirects() {
+    return [
+      {
+        source: "/login/",
+        destination: "/login",
+        permanent: true,
+      },
+      {
+        source: "/register/",
+        destination: "/register",
+        permanent: true,
+      },
+      {
+        source: "/dash/",
+        destination: "/dash",
+        permanent: true,
+      },
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-XSS-Protection",
+            value: "1; mode=block",
+          },
+        ],
+      },
+    ];
+  },
   typescript: {
     ignoreBuildErrors: false,
   },
   eslint: {
     ignoreDuringBuilds: false,
   },
-  // Webpack configuration for Azure Blob Storage
   webpack: (config: Configuration, { isServer }: { isServer: boolean }) => {
     if (isServer) {
-      // Externalize Azure SDK to prevent build issues
       config.externals = [...(Array.isArray(config.externals) ? config.externals : []), "@azure/storage-blob"];
     }
     return config;

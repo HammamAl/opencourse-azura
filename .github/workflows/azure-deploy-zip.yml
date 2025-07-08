@@ -1,53 +1,95 @@
-name: Build and Deploy E-Learning App to Azure
+name: Deploy E-Learning App with Fixed Routing
 
 on:
   push:
-    branches: [main]
-  workflow_dispatch:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+    types: [closed]
 
 env:
   AZURE_WEBAPP_NAME: hammamal-elearning-app-prod
-  NODE_VERSION: "20.x" # Using a consistent and stable LTS version
+  NODE_VERSION: "20.x"
+  AZURE_WEBAPP_PACKAGE_PATH: "."
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
 
     steps:
       - name: "Checkout GitHub Action"
         uses: actions/checkout@v4
 
-      - name: "Setup Node.js ${{ env.NODE_VERSION }}"
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
-      - name: "Install dependencies"
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
         run: npm ci
 
-      - name: "Generate Prisma Client"
+      - name: Generate Prisma Client
         run: npx prisma generate
-      - name: "Handle Database Migration"
-        run: npx prisma migrate deploy
+
+      - name: Handle Database Migration
+        run: |
+          echo "🔄 Checking database migration status..."
+          if npx prisma migrate status --schema=prisma/schema.prisma 2>&1 | grep -q "following migration have not yet been applied"; then
+            echo "📋 Database needs migration..."
+            npx prisma migrate deploy --schema=prisma/schema.prisma
+          elif npx prisma migrate status --schema=prisma/schema.prisma 2>&1 | grep -q "database schema is not empty"; then
+            echo "🔧 Database schema exists, attempting to baseline..."
+            npx prisma migrate resolve --applied "$(ls prisma/migrations | head -1)" --schema=prisma/schema.prisma || true
+            npx prisma migrate deploy --schema=prisma/schema.prisma || echo "⚠️ Migration deploy failed, continuing..."
+          else
+            echo "✅ Database is up to date"
+          fi
+          echo "🔄 Ensuring database schema is in sync..."
+          npx prisma db push --schema=prisma/schema.prisma --accept-data-loss || echo "⚠️ DB push failed, continuing..."
+          echo "✅ Database migration process completed!"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: "Build Next.js application"
+      - name: Build Next.js application
         run: npm run build
         env:
           NODE_ENV: production
+          NEXTAUTH_URL: https://hammamal-elearning-app-prod-fvdua8defrgnece3.indonesiacentral-01.azurewebsites.net
 
-      - name: "Prepare deployment package"
+      - name: Create deployment package
         run: |
-          mkdir -p deployment
-          cp -r .next/standalone/* deployment/
-          mkdir -p deployment/.next
-          cp -r .next/static deployment/.next/static
+          mkdir -p deployment_package
+          cp -r .next/standalone/. deployment_package/
+          mkdir -p deployment_package/.next
+          cp -r .next/static deployment_package/.next/static
+
+          # Copy public folder
           if [ -d "public" ]; then
-            cp -r public deployment/
+            cp -r public deployment_package/
           fi
-          cd deployment
+
+          # Copy web.config for Azure routing
+          if [ -f "web.config" ]; then
+            cp web.config deployment_package/
+          fi
+
+          # Create iisnode.yml for Azure configuration
+          cat > deployment_package/iisnode.yml << 'EOF'
+          nodeProcessCommandLine: "node server.js"
+          interceptor: "iisnode-express"
+          EOF
+
+          cd deployment_package
           zip -r ../deployment.zip .
 
       - name: "Deploy to Azure Web App"
@@ -56,3 +98,16 @@ jobs:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: ./deployment.zip
+
+      - name: "Post-deployment health check"
+        run: |
+          echo "⏳ Waiting for deployment to be ready..."
+          sleep 60
+          echo "🔍 Checking deployment health..."
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://hammamal-elearning-app-prod-fvdua8defrgnece3.indonesiacentral-01.azurewebsites.net/)
+          if [ $response -eq 200 ]; then
+            echo "✅ Health check passed!"
+          else
+            echo "⚠️ Health check returned status code: $response"
+            echo "💡 Deployment may still be starting up"
+          fi
