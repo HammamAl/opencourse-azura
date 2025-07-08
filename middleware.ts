@@ -18,7 +18,7 @@ const publicRoutes = [
   "/register",
   "/reset",
   "/reset-password",
-  "/course", // Public course viewing
+  "/course",
   "/api/auth/register",
   "/api/auth/signin",
   "/api/auth/callback",
@@ -28,6 +28,7 @@ const publicRoutes = [
   "/unauthorized",
   "/api/health",
   "/health",
+  "/simple",
 ];
 
 // Helper function to get dashboard URL based on role
@@ -208,6 +209,7 @@ export const config = {
     // Add health check endpoints
     "/api/health",
     "/health",
+    "/simple/:path*",
     // Exclude static files and most API routes (except auth)
     "/((?!api/(?!auth)|_next/static|_next/image|favicon.ico|public).*)",
   ],
