@@ -27,6 +27,7 @@ const publicRoutes = [
   "/api/auth/csrf",
   "/unauthorized",
   "/api/health",
+  "/api/posts",
   "/health",
   "/simple",
 ];
@@ -208,6 +209,7 @@ export const config = {
     "/unauthorized",
     // Add health check endpoints
     "/api/health",
+    "/api/posts",
     "/health",
     "/simple/:path*",
     // Exclude static files and most API routes (except auth)
