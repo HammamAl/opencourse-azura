@@ -93,11 +93,6 @@ export function CourseGrid({ enrollments, status, emptyMessage }: CourseGridProp
                   {enrollment.course.users?.title || "Prof. Dr."} {enrollment.course.users?.name || "Khong Guan, S.E., M.E."}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs px-2 py-1">
-                  Kelas satuan
-                </Badge>
-              </div>
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                 <IconClock className="w-4 h-4" />
                 <span>{enrollment.course.course_duration || 4} Minggu</span>

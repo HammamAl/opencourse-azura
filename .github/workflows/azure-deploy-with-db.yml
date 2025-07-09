@@ -67,18 +67,6 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Seed Database (Optional)
-        run: |
-          if [ -f "prisma/seed.ts" ]; then
-            echo "🌱 Seeding database..."
-            npm run db:seed || echo "⚠️ Database seeding failed, continuing..."
-            echo "✅ Database seeding completed!"
-          else
-            echo "⚠️ No seed file found, skipping seeding"
-          fi
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
       - name: Build Next.js application
         run: npm run build
         env:
