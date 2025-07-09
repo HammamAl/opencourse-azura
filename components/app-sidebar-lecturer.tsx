@@ -1,6 +1,6 @@
-"use client";
+"use client"
 
-import * as React from "react";
+import * as React from "react"
 import {
   IconBook,
   IconCamera,
@@ -22,13 +22,21 @@ import {
   IconSearch,
   IconSettings,
   IconUsers,
-} from "@tabler/icons-react";
+} from "@tabler/icons-react"
 
-import { NavDocuments } from "@/components/nav-documents";
-import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
-import { NavUser } from "@/components/nav-user";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
+import { NavDocuments } from "@/components/nav-documents"
+import { NavMain } from "@/components/nav-main"
+import { NavSecondary } from "@/components/nav-secondary"
+import { NavUser } from "@/components/nav-user"
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar"
 
 const data = {
   user: {
@@ -44,7 +52,7 @@ const data = {
     },
     {
       title: "Kelas",
-      url: "/l/course",
+      url: "#",
       icon: IconDoor,
     },
   ],
@@ -103,22 +111,26 @@ const data = {
       icon: IconSettings,
     },
   ],
-  documents: [],
-};
+  documents: [
+  ],
+}
 
-import { usePathname } from "next/navigation";
+import { usePathname } from 'next/navigation';
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const pathname = usePathname();
+  const pathname = usePathname(); // Get the current URL path
 
-  const navMainItems = data.navMain.map((item) => ({
+  // Dynamically add 'isActive' to the nav items
+  const navMainItems = data.navMain.map(item => ({
     ...item,
+    // Mark as active if the current path matches the item's URL
     isActive: pathname === item.url,
   }));
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarContent>
+        {/* Pass the dynamically updated items */}
         <NavMain items={navMainItems} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>

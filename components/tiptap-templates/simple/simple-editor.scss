@@ -22,7 +22,12 @@ html,
 body,
 #root,
 #app {
+  height: 100%;
   background-color: var(--tt-bg-color);
+}
+
+body {
+  overflow: hidden;
 }
 
 .tiptap.ProseMirror {
@@ -30,6 +35,9 @@ body,
 }
 
 .content-wrapper {
+  height: calc(100% - var(--tt-toolbar-height));
+  overflow-y: auto;
+
   &::-webkit-scrollbar {
     display: block;
     width: 0.5rem;
@@ -50,7 +58,9 @@ body,
 }
 
 .simple-editor-content {
+  max-width: 640px;
   width: 100%;
+  margin: 0 auto;
 }
 
 .simple-editor-content .tiptap.ProseMirror {
