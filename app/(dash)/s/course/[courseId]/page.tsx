@@ -177,7 +177,7 @@ export default async function StudentCourseDetailsPage({ params }: StudentCourse
                         <div className="space-y-3">
                           {section.course_material.map((material, materialIndex) => (
                             <div key={material.id} className="border-l-2 border-emerald-200 pl-4 py-2">
-                              <Link href={`/s/dash/course/${course.id}/${material.course_section_id}/${material.id}`} className="flex items-center gap-3 hover:text-emerald-600 transition-colors">
+                              <Link href={`/s/course/${course.id}/${material.course_section_id}/${material.id}`} className="flex items-center gap-3 hover:text-emerald-600 transition-colors">
                                 <BookOpen className="h-4 w-4" />
                                 <span className="font-medium">{material.title}</span>
                               </Link>
