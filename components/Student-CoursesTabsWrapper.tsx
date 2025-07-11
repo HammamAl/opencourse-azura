@@ -7,16 +7,17 @@ import { CourseGrid } from "@/components/CourseGrid";
 interface Course {
   id: string;
   course_id: string;
-  enrolled_at: string; // Changed from Date to string
+  progress: string; // Add progress field
+  enrolled_at: string;
   delisted_at: string | null;
   course: {
     id: string;
     title: string;
     description: string;
     cover_image_url: string | null;
-    course_duration: number; // Changed from Decimal to number
-    estimated_time_per_week: number; // Changed from Decimal to number
-    price: number; // Changed from Decimal to number
+    course_duration: number;
+    estimated_time_per_week: number;
+    price: number;
     language: string;
     lecturer_id: string;
     created_at: string;
@@ -63,13 +64,13 @@ export function StudentCoursesTabsWrapper({ userId, allCourses = [], progressCou
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 max-w-md bg-muted/50">
           <TabsTrigger value="all" className="text-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white font-medium">
-            Kelas Kamu
+            Kelas Kamu ({safeAllCourses.length})
           </TabsTrigger>
           <TabsTrigger value="proses" className="text-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white font-medium">
-            Proses
+            Proses ({safeProgressCourses.length})
           </TabsTrigger>
           <TabsTrigger value="selesai" className="text-sm data-[state=active]:bg-emerald-500 data-[state=active]:text-white font-medium">
-            Selesai
+            Selesai ({safeCompletedCourses.length})
           </TabsTrigger>
         </TabsList>
 

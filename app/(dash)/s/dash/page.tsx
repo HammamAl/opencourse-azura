@@ -11,6 +11,7 @@ function serializeCourseData(enrollments: any[]) {
     ...enrollment,
     enrolled_at: enrollment.enrolled_at.toISOString(),
     delisted_at: enrollment.delisted_at?.toISOString() || null,
+    progress: enrollment.progress, // Include progress field
     course: {
       ...enrollment.course,
       course_duration: Number(enrollment.course.course_duration),
@@ -50,6 +51,7 @@ async function debugAllEnrollments(userId: string) {
       courseTitle: enrollment.course.title,
       courseStatus: enrollment.course.status,
       courseDeleted: enrollment.course.deleted_at,
+      progress: enrollment.progress,
       enrolledAt: enrollment.enrolled_at,
       delistedAt: enrollment.delisted_at,
     });
@@ -58,7 +60,7 @@ async function debugAllEnrollments(userId: string) {
   return allEnrollments;
 }
 
-// Fixed: Get ALL student courses without strict filtering
+// Get ALL student courses without filtering by progress
 async function getAllStudentCourses(userId: string) {
   if (!userId) {
     console.log("No userId provided for getAllStudentCourses");
@@ -72,14 +74,13 @@ async function getAllStudentCourses(userId: string) {
     // First debug all enrollments
     await debugAllEnrollments(userId);
 
-    // Get enrollments with more lenient filtering
+    // Get all enrollments regardless of progress
     const enrollments = await prisma.course_enrollment.findMany({
       where: {
         id: userId,
         delisted_at: null,
-        // Remove course status filter to get all courses like the statistics
         course: {
-          deleted_at: null, // Only filter out actually deleted courses
+          deleted_at: null,
         },
       },
       include: {
@@ -104,6 +105,7 @@ async function getAllStudentCourses(userId: string) {
       enrollments.map((e) => ({
         courseId: e.course_id,
         courseTitle: e.course.title,
+        progress: e.progress,
         enrolledAt: e.enrolled_at,
         courseStatus: e.course.status,
       }))
@@ -116,24 +118,20 @@ async function getAllStudentCourses(userId: string) {
   }
 }
 
+// Get student courses with progress = "ongoing"
 async function getProgressStudentCourses(userId: string) {
   if (!userId) return [];
 
   console.log("=== GET PROGRESS COURSES ===");
 
   try {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    console.log("Progress courses - enrolled after:", thirtyDaysAgo.toISOString());
-
     const enrollments = await prisma.course_enrollment.findMany({
       where: {
         id: userId,
         delisted_at: null,
-        enrolled_at: {
-          gte: thirtyDaysAgo,
-        },
+        progress: "ongoing", // Filter by progress status
         course: {
-          deleted_at: null, // More lenient filtering
+          deleted_at: null,
         },
       },
       include: {
@@ -153,6 +151,15 @@ async function getProgressStudentCourses(userId: string) {
     });
 
     console.log("Progress courses found:", enrollments.length);
+    console.log(
+      "Progress courses details:",
+      enrollments.map((e) => ({
+        courseId: e.course_id,
+        courseTitle: e.course.title,
+        progress: e.progress,
+      }))
+    );
+
     return serializeCourseData(enrollments);
   } catch (error) {
     console.error("Error fetching progress student courses:", error);
@@ -160,24 +167,20 @@ async function getProgressStudentCourses(userId: string) {
   }
 }
 
+// Get student courses with progress = "completed"
 async function getCompletedStudentCourses(userId: string) {
   if (!userId) return [];
 
   console.log("=== GET COMPLETED COURSES ===");
 
   try {
-    const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
-    console.log("Completed courses - enrolled before:", sixtyDaysAgo.toISOString());
-
     const enrollments = await prisma.course_enrollment.findMany({
       where: {
         id: userId,
         delisted_at: null,
-        enrolled_at: {
-          lt: sixtyDaysAgo,
-        },
+        progress: "completed", // Filter by progress status
         course: {
-          deleted_at: null, // More lenient filtering
+          deleted_at: null,
         },
       },
       include: {
@@ -197,6 +200,15 @@ async function getCompletedStudentCourses(userId: string) {
     });
 
     console.log("Completed courses found:", enrollments.length);
+    console.log(
+      "Completed courses details:",
+      enrollments.map((e) => ({
+        courseId: e.course_id,
+        courseTitle: e.course.title,
+        progress: e.progress,
+      }))
+    );
+
     return serializeCourseData(enrollments);
   } catch (error) {
     console.error("Error fetching completed student courses:", error);

@@ -42,8 +42,8 @@ model course {
   category_id             String
   admin_review            String?
   status                  String
-  cart                    cart[]
   category                category                 @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  cart                    cart[]
   users                   users                    @relation(fields: [lecturer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   course_enrollment       course_enrollment[]
   course_learning_target  course_learning_target[]
@@ -54,6 +54,7 @@ model course {
 model course_enrollment {
   id          String
   course_id   String
+  progress    String    @default("ongoing")
   enrolled_at DateTime  @db.Timestamptz(6)
   delisted_at DateTime? @db.Timestamptz(6)
   course      course    @relation(fields: [course_id], references: [id], onDelete: NoAction, onUpdate: NoAction)

@@ -5,21 +5,22 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import Link from "next/link";
 import Image from "next/image";
-import { IconUser, IconClock } from "@tabler/icons-react";
+import { IconUser, IconClock, IconCircleCheck, IconClock2 } from "@tabler/icons-react";
 
 interface Course {
   id: string;
   course_id: string;
-  enrolled_at: string; // Changed from Date to string
+  progress: string; // Add progress field
+  enrolled_at: string;
   delisted_at: string | null;
   course: {
     id: string;
     title: string;
     description: string;
     cover_image_url: string | null;
-    course_duration: number; // Changed from Decimal to number
-    estimated_time_per_week: number; // Changed from Decimal to number
-    price: number; // Changed from Decimal to number
+    course_duration: number;
+    estimated_time_per_week: number;
+    price: number;
     language: string;
     lecturer_id: string;
     created_at: string;
@@ -63,6 +64,31 @@ export function CourseGrid({ enrollments, status, emptyMessage }: CourseGridProp
     "from-pink-100 to-pink-200 dark:from-pink-900/30 dark:to-pink-800/30",
   ];
 
+  const getProgressBadge = (progress: string) => {
+    switch (progress) {
+      case "ongoing":
+        return (
+          <Badge variant="secondary" className="text-xs px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+            <IconClock2 className="w-3 h-3 mr-1" />
+            Sedang Berlangsung
+          </Badge>
+        );
+      case "finished":
+        return (
+          <Badge variant="secondary" className="text-xs px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+            <IconCircleCheck className="w-3 h-3 mr-1" />
+            Selesai
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="secondary" className="text-xs px-2 py-1">
+            Kelas satuan
+          </Badge>
+        );
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {safeEnrollments.map((enrollment, index) => (
@@ -93,11 +119,7 @@ export function CourseGrid({ enrollments, status, emptyMessage }: CourseGridProp
                   {enrollment.course.users?.title || "Prof. Dr."} {enrollment.course.users?.name || "Khong Guan, S.E., M.E."}
                 </span>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs px-2 py-1">
-                  Kelas satuan
-                </Badge>
-              </div>
+              <div className="flex items-center gap-2">{getProgressBadge(enrollment.progress)}</div>
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                 <IconClock className="w-4 h-4" />
                 <span>{enrollment.course.course_duration || 4} Minggu</span>
@@ -107,7 +129,7 @@ export function CourseGrid({ enrollments, status, emptyMessage }: CourseGridProp
             <CardFooter className="p-0">
               <Link href={`/s/course/${enrollment.course.id}`} className="w-full">
                 <Button className="w-full" variant="outline" size="sm">
-                  {status === "selesai" ? "Review Course" : "Lanjutkan Belajar"}
+                  {enrollment.progress === "completed" ? "Review Course" : "Lanjutkan Belajar"}
                 </Button>
               </Link>
             </CardFooter>
