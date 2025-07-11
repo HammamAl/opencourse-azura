@@ -104,8 +104,8 @@ export function CourseGrid({ enrollments, status, emptyMessage }: CourseGridProp
               </div>
             </div>
 
-            <CardFooter className="p-0">
-              <Link href={`/course/${enrollment.course.id}`} className="w-full">
+               <CardFooter className="p-0">
+              <Link href={`/s/course/${enrollment.course.id}`} className="w-full">
                 <Button className="w-full" variant="outline" size="sm">
                   {status === "selesai" ? "Review Course" : "Lanjutkan Belajar"}
                 </Button>
