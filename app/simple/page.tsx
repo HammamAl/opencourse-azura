@@ -7,18 +7,19 @@ export default function CreatePostPage() {
   const [title, setTitle] = useState("");
 
   const handleSave = async (content: string) => {
-    const response = await fetch("/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        content, // This is JSON string
-      }),
-    });
+    // const response = await fetch("/api/posts", {
+    //   method: "POST",
+    //   headers: { "Content-Type": "application/json" },
+    //   body: JSON.stringify({
+    //     title,
+    //     content, // This is JSON string
+    //   }),
+    // });
 
-    if (response.ok) {
-      alert("Saved!");
-    }
+    // if (response.ok) {
+    //   alert("Saved!");
+    // }
+    console.log(content);
   };
 
   return (
