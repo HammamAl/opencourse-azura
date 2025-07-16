@@ -26,7 +26,10 @@ export default function CreatePostPage() {
     <div className="max-w-4xl mx-auto p-6">
       <input type="text" placeholder="Title..." value={title} onChange={(e) => setTitle(e.target.value)} className="w-full text-2xl mb-4 p-2 border rounded" />
 
-      <SimpleEditor onSave={handleSave} placeholder="Start writing..." />
+      <SimpleEditor
+        // onSave={handleSave}
+        placeholder="Start writing..."
+      />
     </div>
   );
 }

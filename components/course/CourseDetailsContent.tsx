@@ -211,7 +211,7 @@ export function CourseDetailsContent({ course, enrollmentCount, instructors }: C
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-text-primary">Mulai Belajar Hari Ini</h2>
               <p className="text-text-secondary leading-relaxed">Dapatkan Sertifikat Terverifikasi untuk menyoroti pengetahuan dan keterampilan yang Anda peroleh {formatPrice(course.price)}</p>
-              <Link href="/register">
+              <Link href={`/cart?courseId=${course.id}`}>
                 <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors cursor-pointer">Dapatkan Sertifikat</button>
               </Link>
             </div>

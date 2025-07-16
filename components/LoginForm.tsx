@@ -56,9 +56,7 @@ export default function LoginForm({ enableRedirection = true }: LoginFormProps) 
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="mb-6">
         <h3 className="text-xl font-bold text-gray-900 text-center mb-2">Masuk</h3>
-        {!enableRedirection && (
-          <p className="text-gray-600 text-center text-sm">Masuk untuk melanjutkan pembelian</p>
-        )}
+        {!enableRedirection && <p className="text-gray-600 text-center text-sm">Masuk untuk melanjutkan pembelian</p>}
       </div>
 
       <form className="space-y-5" onSubmit={handleSubmit}>
@@ -129,9 +127,7 @@ export default function LoginForm({ enableRedirection = true }: LoginFormProps) 
       <div className="mt-6 space-y-4">
         <div className="text-center">
           <Link href="/reset">
-            <span className="text-blue-600 hover:text-blue-500 font-medium hover:underline transition-colors duration-200 text-sm cursor-pointer">
-              Lupa Password?
-            </span>
+            <span className="text-blue-600 hover:text-blue-500 font-medium hover:underline transition-colors duration-200 text-sm cursor-pointer">Lupa Password?</span>
           </Link>
         </div>
 
@@ -147,9 +143,7 @@ export default function LoginForm({ enableRedirection = true }: LoginFormProps) 
         <div className="text-center">
           <span className="text-gray-600 text-sm">Belum punya akun? </span>
           <Link href="/register">
-            <span className="text-blue-600 hover:text-blue-500 font-medium hover:underline transition-colors duration-200 text-sm cursor-pointer">
-              Daftar sekarang
-            </span>
+            <span className="text-blue-600 hover:text-blue-500 font-medium hover:underline transition-colors duration-200 text-sm cursor-pointer">Daftar sekarang</span>
           </Link>
         </div>
       </div>
