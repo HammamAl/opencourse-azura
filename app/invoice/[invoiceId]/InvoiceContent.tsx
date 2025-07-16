@@ -185,9 +185,6 @@ export default function InvoiceContent({ payment }: InvoiceContentProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-4">
-              <Button variant="outline" className="flex-1 text-blue-600 border-blue-600" onClick={() => window.open("/payment/manual", "_blank")}>
-                Lihat Invoice
-              </Button>
               <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={handlePayment} disabled={!selectedBank || isProcessing}>
                 {isProcessing ? "Memproses..." : "Konfirmasi Pembayaran"}
               </Button>
