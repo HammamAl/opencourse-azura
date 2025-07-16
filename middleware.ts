@@ -20,6 +20,7 @@ const publicRoutes = [
   "/reset-password",
   "/course",
   "/cart",
+  "/invoice",
   "/api/auth/register",
   "/api/auth/signin",
   "/api/auth/callback",
@@ -127,18 +128,15 @@ export async function middleware(request: NextRequest) {
   // Handle public routes (including register page)
   if (isPublicRoute(pathname)) {
     // Special handling for login and register pages when user is already authenticated
+    // Only redirect from login/register pages, NOT from the landing page
     if ((pathname === "/login" || pathname === "/register") && token) {
       const userRole = token.role as UserRole;
       const dashboardUrl = getDashboardUrl(userRole);
       return NextResponse.redirect(new URL(dashboardUrl, request.url));
     }
 
-    // Handle root path redirect for authenticated users
-    if (pathname === "/" && token) {
-      const userRole = token.role as UserRole;
-      const dashboardUrl = getDashboardUrl(userRole);
-      return NextResponse.redirect(new URL(dashboardUrl, request.url));
-    }
+    // REMOVED: The problematic root path redirect that was preventing students from accessing landing page
+    // This allows all users (authenticated and unauthenticated) to access the landing page
 
     // Allow access to public routes
     const response = NextResponse.next();
@@ -176,7 +174,7 @@ export async function middleware(request: NextRequest) {
     response.headers.set("x-user-role", (token.role as string) || "unknown");
     response.headers.set("x-user-id", token.id || "unknown");
   }
-  response.headers.set("x-deployment-timestamp", "2025-07-08 05:02:40");
+  response.headers.set("x-deployment-timestamp", "2025-07-16 06:01:18");
   response.headers.set("x-deployed-by", "HammamAl");
 
   // Add security headers
@@ -199,6 +197,8 @@ export const config = {
     "/reset-password",
     // Add course pages (public)
     "/course/:path*",
+    // Add invoice pages (public but will be protected by logic)
+    "/invoice/:path*",
     // Match all admin routes
     "/a/:path*",
     // Match all user routes
