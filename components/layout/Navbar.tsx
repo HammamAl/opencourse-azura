@@ -29,7 +29,7 @@ const Navbar = () => {
       case "student":
         return "/s/dash"; // Student enrolled courses page
       default:
-        return "/course"; // Fallback to public course page
+        return "/"; // Fallback to public course page
     }
   };
 
