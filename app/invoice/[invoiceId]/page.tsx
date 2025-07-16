@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import InvoiceContent from "./InvoiceContent";
-
+import Navbar from "@/components/layout/Navbar";
 interface InvoicePageProps {
   params: Promise<{
     invoiceId: string;
@@ -67,10 +67,13 @@ export default async function InvoicePage({ params }: InvoicePageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <InvoiceContent payment={serializedPayment} />
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <InvoiceContent payment={serializedPayment} />
+        </div>
       </div>
-    </div>
+    </>
   );
 }

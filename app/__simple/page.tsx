@@ -7,25 +7,30 @@ export default function CreatePostPage() {
   const [title, setTitle] = useState("");
 
   const handleSave = async (content: string) => {
-    // const response = await fetch("/api/posts", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({
-    //     title,
-    //     content, // This is JSON string
-    //   }),
-    // });
+    const response = await fetch("/api/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        content, // This is JSON string
+      }),
+    });
 
-    // if (response.ok) {
-    //   alert("Saved!");
-    // }
-    console.log(content);
+    if (response.ok) {
+      alert("Saved!");
+    }
   };
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <input type="text" placeholder="Title..." value={title} onChange={(e) => setTitle(e.target.value)} className="w-full text-2xl mb-4 p-2 border rounded" />
-
+      <input
+        type="text"
+        placeholder="Title..."
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        className="w-full text-2xl mb-4 p-2 border rounded"
+      />
+      
       <SimpleEditor
         // onSave={handleSave}
         placeholder="Start writing..."

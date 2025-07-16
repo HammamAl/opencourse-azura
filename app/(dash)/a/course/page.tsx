@@ -1,14 +1,14 @@
-"use client";
+"use client"
 
-import React, { useState, useEffect, JSX } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, User, BookOpen, AlertCircle, Clock, DollarSign, Globe, Plus } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import Link from "next/link";
+import React, { useState, useEffect, JSX } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, User, BookOpen, AlertCircle, Clock, DollarSign, Globe, Plus } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import Link from 'next/link';
 
 // --- Type Definitions ---
 
@@ -67,19 +67,19 @@ export default function CourseManagementDashboard() {
     try {
       const params = new URLSearchParams({
         filter: filter,
-        sortBy: sort,
+        sortBy: sort
       });
 
       const response = await fetch(`/api/course?${params}`, {
-        credentials: "include",
+        credentials: 'include'
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Unauthorized: Please log in");
+          throw new Error('Unauthorized: Please log in');
         }
         if (response.status === 403) {
-          throw new Error("Forbidden: Admin access required");
+          throw new Error('Forbidden: Admin access required');
         }
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -106,7 +106,11 @@ export default function CourseManagementDashboard() {
     const badges: JSX.Element[] = [];
     if (course.status === "need-review") {
       badges.push(
-        <Badge key="need-review" variant="destructive" className="bg-yellow-100 text-yellow-800">
+        <Badge
+          key="need-review"
+          variant="destructive"
+          className="bg-yellow-100 text-yellow-800"
+        >
           Perlu Diulas
         </Badge>
       );
@@ -114,7 +118,11 @@ export default function CourseManagementDashboard() {
 
     if (course.status === "reviewed") {
       badges.push(
-        <Badge key="reviewed" variant="secondary" className="bg-blue-100 text-blue-800">
+        <Badge
+          key="reviewed"
+          variant="secondary"
+          className="bg-blue-100 text-blue-800"
+        >
           Sudah Diulas
         </Badge>
       );
@@ -122,7 +130,11 @@ export default function CourseManagementDashboard() {
 
     if (course.status === "draft") {
       badges.push(
-        <Badge key="draft" variant="outline" className="bg-gray-100 text-gray-800">
+        <Badge
+          key="draft"
+          variant="outline"
+          className="bg-gray-100 text-gray-800"
+        >
           Draf
         </Badge>
       );
@@ -130,7 +142,11 @@ export default function CourseManagementDashboard() {
 
     if (course.status === "published") {
       badges.push(
-        <Badge key="published" variant="default" className="bg-green-100 text-green-800">
+        <Badge
+          key="published"
+          variant="default"
+          className="bg-green-100 text-green-800"
+        >
           Publikasi
         </Badge>
       );
@@ -140,11 +156,11 @@ export default function CourseManagementDashboard() {
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(price);
   };
 
@@ -160,14 +176,14 @@ export default function CourseManagementDashboard() {
             onError={(e) => {
               // Handle broken image by showing placeholder
               const target = e.target as HTMLImageElement;
-              target.style.display = "none";
-              target.nextElementSibling?.classList.remove("hidden");
+              target.style.display = 'none';
+              target.nextElementSibling?.classList.remove('hidden');
             }}
           />
         ) : null}
 
         {/* Placeholder for missing or broken images */}
-        <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 ${course.cover_image_url ? "hidden" : ""}`}>
+        <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 ${course.cover_image_url ? 'hidden' : ''}`}>
           <div className="text-center">
             <BookOpen className="w-12 h-12 mx-auto text-gray-400 mb-2" />
             <p className="text-sm text-gray-500">No Image</p>
@@ -175,7 +191,9 @@ export default function CourseManagementDashboard() {
         </div>
 
         {/* Status Badge Overlay */}
-        <div className="absolute top-3 right-3 flex flex-col items-end gap-1">{getStatusBadges(course)}</div>
+        <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+          {getStatusBadges(course)}
+        </div>
 
         {/* Price Badge */}
         <div className="absolute bottom-3 left-3">
@@ -186,11 +204,16 @@ export default function CourseManagementDashboard() {
       </div>
 
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold line-clamp-2">{course.title || "Untitled Course"}</CardTitle>
-        <CardDescription className="line-clamp-2">{course.description || "No description available"}</CardDescription>
+        <CardTitle className="text-lg font-semibold line-clamp-2">
+          {course.title || 'Untitled Course'}
+        </CardTitle>
+        <CardDescription className="line-clamp-2">
+          {course.description || 'No description available'}
+        </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-3 pt-0">
+
         {course.lecturer_name && (
           <div className="flex items-center text-sm text-gray-600 mb-2">
             <User className="w-4 h-4 mr-2" />
@@ -217,7 +240,9 @@ export default function CourseManagementDashboard() {
       <CardFooter className="flex justify-between items-center pt-0">
         <div className="space-x-2">
           <Button variant="outline" size="sm">
-            <Link href={`/a/course/${course.id}`}>Lihat</Link>
+            <Link href={`/a/course/${course.id}`}>
+              Lihat
+            </Link>
           </Button>
           <Button variant="default" size="sm">
             Edit
@@ -229,18 +254,22 @@ export default function CourseManagementDashboard() {
 
   const EmptyState = ({ filter }: { filter: FilterValue }) => {
     const messages: Record<FilterValue, string> = {
-      "need-review": "Tidak ada kursus yang perlu diulas",
-      published: "Tidak ada kursus yang dipublikasi",
-      reviewed: "Tidak ada kursus yang sudah diulas",
-      draft: "Tidak ada draf kursus",
-      all: "Tidak ada kursus ditemukan",
+      'need-review': 'Tidak ada kursus yang perlu diulas',
+      'published': 'Tidak ada kursus yang dipublikasi',
+      'reviewed': 'Tidak ada kursus yang sudah diulas',
+      'draft': 'Tidak ada draf kursus',
+      'all': 'Tidak ada kursus ditemukan'
     };
 
     return (
       <div className="text-center py-12">
         <BookOpen className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">{messages[filter]}</h3>
-        <p className="text-gray-500">{filter === "all" ? "Mulai dengan membuat kursus baru" : "Coba filter lain atau buat kursus baru"}</p>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">
+          {messages[filter]}
+        </h3>
+        <p className="text-gray-500">
+          {filter === 'all' ? 'Mulai dengan membuat kursus baru' : 'Coba filter lain atau buat kursus baru'}
+        </p>
       </div>
     );
   };
@@ -268,7 +297,11 @@ export default function CourseManagementDashboard() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <TabsList>
             {tabs.map((tab) => (
-              <TabsTrigger key={tab.value} value={tab.value} className="px-2 sm:px-4">
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="px-2 sm:px-4"
+              >
                 {tab.label}
               </TabsTrigger>
             ))}
@@ -315,7 +348,7 @@ export default function CourseManagementDashboard() {
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">
             Menampilkan {courses.length} kursus
-            {activeTab !== "all" && ` dalam ${tabs.find((t) => t.value === activeTab)?.label.toLowerCase()}`}
+            {activeTab !== 'all' && ` dalam ${tabs.find(t => t.value === activeTab)?.label.toLowerCase()}`}
           </p>
         </div>
       )}

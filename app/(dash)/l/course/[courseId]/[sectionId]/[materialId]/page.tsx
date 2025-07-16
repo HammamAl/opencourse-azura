@@ -48,7 +48,7 @@ function enhanceHTMLWithTailwind(html: string): string {
   $("blockquote").addClass("border-l-4 border-gray-300 pl-4 italic text-gray-600 my-4");
   $("pre").addClass("bg-gray-900 text-white p-4 rounded overflow-x-auto my-4");
   $("code").each((_, el) => {
-    if ($(el).parent().is("pre")) return; 
+    if ($(el).parent().is("pre")) return;
     $(el).addClass("bg-gray-100 px-1 py-0.5 rounded");
   });
   $("hr").addClass("my-8 border-t border-gray-300");
