@@ -3,6 +3,7 @@ import { Configuration } from "webpack";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  serverExternalPackages: ["argon2"],
   experimental: {
     serverComponentsExternalPackages: ["@azure/storage-blob"],
   },
