@@ -1,5 +1,5 @@
 import { authOptions } from "@/lib/authOptions";
-import { getBlobServiceClient } from "@/lib/azureBlob";
+import { blobServiceClient } from "@/lib/blob";
 import { fileTypeFromBuffer } from "file-type";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -50,8 +50,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get blob service client (this will only initialize when called)
-    const blobServiceClient = getBlobServiceClient();
     const containerClient = blobServiceClient.getContainerClient("images");
     const extension = type.ext;
     const blobName = `${uuidv7()}.${extension}`;
