@@ -30,7 +30,7 @@ export const CourseCard = ({ course }: CourseCardProps) => {
   const handleRegisterClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    window.location.href = "/register";
+    window.location.href = `/cart?courseId=${course.id}`;
   };
 
   return (
