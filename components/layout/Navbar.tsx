@@ -2,23 +2,43 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useEffect, useRef } from "react";
 import { CircleUser } from "lucide-react";
 
 const Navbar = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session, status } = useSession();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const navLinks = [
-    { href: "/kelas", label: "Kelas" },
-    { href: "/sertifikat", label: "Sertifikat" },
-    { href: "/terprogram", label: "Terprogram" },
-    { href: "/tentang", label: "Tentang" },
-  ];
+  // Function to get course page URL based on user role
+  const getCoursePageUrl = () => {
+    if (!session?.user) {
+      return "/course"; // Default public course page for unauthenticated users
+    }
+
+    const userRole = session.user.role;
+    switch (userRole) {
+      case "admin":
+        return "/a/course"; // Admin course management page
+      case "lecturer":
+        return "/l/course"; // Lecturer course management page
+      case "student":
+        return "/s/dash/course"; // Student enrolled courses page
+      default:
+        return "/course"; // Fallback to public course page
+    }
+  };
+
+  // Handle Kelas button click
+  const handleKelasClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const courseUrl = getCoursePageUrl();
+    router.push(courseUrl);
+  };
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -47,9 +67,10 @@ const Navbar = () => {
             FE Open Course
           </Link>
           <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/kelas" className="text-white hover:text-gray-200">
+            {/* Role-based Kelas button */}
+            <button onClick={handleKelasClick} className="text-white hover:text-gray-200 focus:outline-none cursor-pointer transition-colors duration-200">
               Kelas
-            </Link>
+            </button>
             <Link href="/sertifikat" className="text-white hover:text-gray-200">
               Sertifikasi Terprogram
             </Link>
@@ -82,10 +103,27 @@ const Navbar = () => {
                   <div className="px-4 py-2 border-b">
                     <p className="font-bold text-sm">{session.user?.name}</p>
                     <p className="text-xs text-gray-500">{session.user?.email}</p>
+                    <p className="text-xs text-blue-500 capitalize">{session.user?.role}</p>
                   </div>
+
+                  {/* Role-based dashboard link */}
+                  <Link
+                    href={session.user?.role === "admin" ? "/a/dash" : session.user?.role === "lecturer" ? "/l/dash" : "/s/dash"}
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+
+                  {/* Role-based course link */}
+                  <Link href={getCoursePageUrl()} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsDropdownOpen(false)}>
+                    {session.user?.role === "admin" ? "Kelola Kelas" : session.user?.role === "lecturer" ? "Kelas Saya" : "Kelas Saya"}
+                  </Link>
+
                   <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsDropdownOpen(false)}>
                     Profile
                   </Link>
+
                   <button
                     onClick={() => {
                       setIsDropdownOpen(false);
