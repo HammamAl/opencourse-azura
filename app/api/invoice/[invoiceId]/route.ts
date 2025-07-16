@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(request: NextRequest, { params }: { params: { invoiceId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ invoiceId: string }> }) {
   try {
-    const { invoiceId } = params;
+    const { invoiceId } = await params; // Await the params
 
     const payment = await prisma.payment.findFirst({
       where: {
@@ -37,12 +37,16 @@ export async function GET(request: NextRequest, { params }: { params: { invoiceI
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
+    // Serialize data to handle Decimal objects
     return NextResponse.json({
       invoiceId: payment.invoice_id,
-      amount: payment.amount,
+      amount: payment.amount.toString(),
       status: payment.payment_status,
-      createdAt: payment.created_at,
-      course: payment.course,
+      createdAt: payment.created_at.toISOString(),
+      course: {
+        ...payment.course,
+        price: payment.course.price.toString(),
+      },
       user: payment.users,
     });
   } catch (error) {
