@@ -27,7 +27,7 @@ const Navbar = () => {
       case "lecturer":
         return "/l/course"; // Lecturer course management page
       case "student":
-        return "/s/dash/course"; // Student enrolled courses page
+        return "/s/dash"; // Student enrolled courses page
       default:
         return "/course"; // Fallback to public course page
     }
