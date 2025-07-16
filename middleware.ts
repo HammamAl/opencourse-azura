@@ -19,6 +19,7 @@ const publicRoutes = [
   "/reset",
   "/reset-password",
   "/course",
+  "/cart",
   "/api/auth/register",
   "/api/auth/signin",
   "/api/auth/callback",
@@ -210,6 +211,7 @@ export const config = {
     "/api/health",
     "/health",
     "/simple/:path*",
+    "/cart/:courseId?",
     // Exclude static files and most API routes (except auth)
     "/((?!api/(?!auth)|_next/static|_next/image|favicon.ico|public).*)",
   ],
