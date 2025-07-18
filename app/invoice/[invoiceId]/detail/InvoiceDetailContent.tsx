@@ -285,7 +285,7 @@ export default function InvoiceDetailContent({ payment }: InvoiceDetailContentPr
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Kode unik</span>
-                  <span className="font-medium">264</span>
+                  <span className="font-medium">-</span>
                 </div>
                 <div className="border-t border-gray-300 pt-2">
                   <div className="flex justify-between items-center">
