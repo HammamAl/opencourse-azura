@@ -260,69 +260,6 @@ export default function InvoicePDFContent({ payment }: InvoicePDFContentProps) {
             </div>
           </div>
         </div>
-
-        {/* Bank Transfer Method */}
-        <div className="border-2 border-gray-300 rounded-lg">
-          <div className="bg-white p-6 border-b border-gray-300">
-            <h2 className="text-xl font-bold text-gray-900">
-              Metode Pembayaran Transfer Bank
-              {payment.payment_status === "completed" && <span className="text-sm font-normal text-green-600 ml-2">(Sudah Dibayar)</span>}
-            </h2>
-          </div>
-          <div className="p-6">
-            <div className="mb-6">
-              <p className="text-gray-700 mb-4">
-                {payment.payment_status === "pending" ? (
-                  <>
-                    Lakukan pembayaran sebesar <span className="font-bold text-blue-600">{formatToIDR(payment.amount)}</span> tepat 3 digit terakhir (JANGAN dibulatkan) dan tambahkan berita{" "}
-                    <span className="font-bold">{payment.invoice_id}</span> sehingga dapat diproses oleh sistem secara otomatis (tidak perlu konfirmasi secara manual).
-                  </>
-                ) : (
-                  <>
-                    Pembayaran sebesar <span className="font-bold text-blue-600">{formatToIDR(payment.amount)}</span> dengan kode berita <span className="font-bold">{payment.invoice_id}</span> telah berhasil diproses.
-                  </>
-                )}
-              </p>
-              <p className="text-gray-700 mb-6">{payment.payment_status === "pending" ? "Pembayaran dapat dilakukan dengan transfer ke akun berikut:" : "Berikut adalah detail rekening yang digunakan untuk pembayaran:"}</p>
-            </div>
-
-            <div className="space-y-6">
-              {banks.map((bank, index) => (
-                <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <h4 className="font-bold text-gray-900 mb-3 text-lg">{bank.name}</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-700 font-medium">{bank.accountNumber}</span>
-                    </div>
-                    <p className="text-gray-600">{bank.accountName}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-gray-700">{bank.berita}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {payment.payment_status === "pending" && (
-              <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="font-semibold text-yellow-800">Penting!</p>
-                <p className="text-yellow-700 mt-1">Jika setelah 15 menit pembayaran yang Anda lakukan dan tagihan Anda belum diproses, silakan konfirmasi secara manual.</p>
-              </div>
-            )}
-
-            {payment.payment_status === "completed" && (
-              <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-4">
-                <div className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-semibold text-green-800">Pembayaran Berhasil!</p>
-                    <p className="text-green-700 mt-1">Terima kasih atas pembayaran Anda. Anda sekarang dapat mengakses kelas yang telah dibeli.</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );
