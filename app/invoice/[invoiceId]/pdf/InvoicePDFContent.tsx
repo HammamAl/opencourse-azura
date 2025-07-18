@@ -161,18 +161,6 @@ export default function InvoicePDFContent({ payment }: InvoicePDFContentProps) {
 
       {/* Invoice Content */}
       <div className="space-y-8">
-        {/* Status Badge */}
-        <div className={`border-2 ${statusInfo.borderColor} ${statusInfo.bgColor} rounded-lg`}>
-          <div className="p-6">
-            <div className="flex items-center justify-center gap-3">
-              {statusInfo.icon}
-              <span className={`text-lg font-semibold ${statusInfo.color}`}>{statusInfo.text}</span>
-            </div>
-            {payment.payment_status === "completed" && <p className="text-center text-green-700 mt-2">Pembayaran dikonfirmasi pada: {formatDateTime(payment.created_at)}</p>}
-            {payment.payment_status === "pending" && <p className="text-center text-yellow-700 mt-2">Batas waktu pembayaran: {getExpiryDate(payment.created_at)}</p>}
-          </div>
-        </div>
-
         {/* Invoice Header */}
         <div className="border-2 border-gray-300 rounded-lg">
           <div className="bg-white p-6 border-b border-gray-300">
