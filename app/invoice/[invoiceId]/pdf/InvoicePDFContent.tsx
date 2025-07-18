@@ -1,6 +1,6 @@
 "use client";
 import { useEffect } from "react";
-import { Info, Calendar, User } from "lucide-react";
+import { Info, Calendar, User, Clock, CheckCircle, XCircle } from "lucide-react";
 
 interface InvoicePDFContentProps {
   payment: {
@@ -44,6 +44,16 @@ export default function InvoicePDFContent({ payment }: InvoicePDFContentProps) {
     });
   };
 
+  const formatDateTime = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const getExpiryDate = (createdAtString: string): string => {
     const expiry = new Date(createdAtString);
     expiry.setHours(expiry.getHours() + 24);
@@ -52,6 +62,43 @@ export default function InvoicePDFContent({ payment }: InvoicePDFContentProps) {
       month: "2-digit",
       year: "numeric",
     });
+  };
+
+  const getStatusInfo = (status: string) => {
+    switch (status) {
+      case "pending":
+        return {
+          icon: <Clock className="h-5 w-5 text-yellow-600" />,
+          text: "Menunggu Pembayaran",
+          color: "text-yellow-600",
+          bgColor: "bg-yellow-50",
+          borderColor: "border-yellow-200",
+        };
+      case "completed":
+        return {
+          icon: <CheckCircle className="h-5 w-5 text-green-600" />,
+          text: "Pembayaran Berhasil",
+          color: "text-green-600",
+          bgColor: "bg-green-50",
+          borderColor: "border-green-200",
+        };
+      case "failed":
+        return {
+          icon: <XCircle className="h-5 w-5 text-red-600" />,
+          text: "Pembayaran Gagal",
+          color: "text-red-600",
+          bgColor: "bg-red-50",
+          borderColor: "border-red-200",
+        };
+      default:
+        return {
+          icon: <Clock className="h-5 w-5 text-gray-600" />,
+          text: "Status Tidak Diketahui",
+          color: "text-gray-600",
+          bgColor: "bg-gray-50",
+          borderColor: "border-gray-200",
+        };
+    }
   };
 
   useEffect(() => {
@@ -70,6 +117,8 @@ export default function InvoicePDFContent({ payment }: InvoicePDFContentProps) {
       document.head.removeChild(style);
     };
   }, []);
+
+  const statusInfo = getStatusInfo(payment.payment_status);
 
   const banks = [
     {
@@ -112,9 +161,21 @@ export default function InvoicePDFContent({ payment }: InvoicePDFContentProps) {
 
       {/* Invoice Content */}
       <div className="space-y-8">
+        {/* Status Badge */}
+        <div className={`border-2 ${statusInfo.borderColor} ${statusInfo.bgColor} rounded-lg`}>
+          <div className="p-6">
+            <div className="flex items-center justify-center gap-3">
+              {statusInfo.icon}
+              <span className={`text-lg font-semibold ${statusInfo.color}`}>{statusInfo.text}</span>
+            </div>
+            {payment.payment_status === "completed" && <p className="text-center text-green-700 mt-2">Pembayaran dikonfirmasi pada: {formatDateTime(payment.created_at)}</p>}
+            {payment.payment_status === "pending" && <p className="text-center text-yellow-700 mt-2">Batas waktu pembayaran: {getExpiryDate(payment.created_at)}</p>}
+          </div>
+        </div>
+
         {/* Invoice Header */}
         <div className="border-2 border-gray-300 rounded-lg">
-          <div className="bg-gray-50 p-6 border-b border-gray-300">
+          <div className="bg-white p-6 border-b border-gray-300">
             <div className="flex justify-between items-start">
               <div>
                 <h1 className="text-4xl font-bold text-gray-900">INVOICE</h1>
@@ -136,14 +197,32 @@ export default function InvoicePDFContent({ payment }: InvoicePDFContentProps) {
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
               {/* Customer Info */}
-              <div>
+              <div className="flex flex-col">
                 <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
                   <User className="h-5 w-5" />
                   Kepada
                 </h3>
-                <div className="space-y-1">
-                  <p className="font-medium text-gray-900">{payment.users.full_name}</p>
-                  <p className="text-gray-600">{payment.users.email}</p>
+                <div className="p-4 rounded-lg border border-gray-200 bg-gray-50 flex-1 min-h-[80px] flex flex-col justify-center">
+                  <div className="space-y-2">
+                    <p className="font-medium text-gray-900">{payment.users.full_name}</p>
+                    <p className="text-gray-600 text-sm">{payment.users.email}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Status Info */}
+              <div className="flex flex-col">
+                <h3 className="font-semibold text-gray-900 mb-4">Status Pembayaran</h3>
+                <div className={`p-4 rounded-lg border ${statusInfo.borderColor} ${statusInfo.bgColor} flex-1 min-h-[80px] flex flex-col justify-center`}>
+                  <div className="flex items-center gap-2 mb-3">
+                    {statusInfo.icon}
+                    <span className={`font-medium ${statusInfo.color}`}>{statusInfo.text}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-600">Dibuat: {formatDateTime(payment.created_at)}</p>
+                    {payment.payment_status === "pending" && <p className="text-sm text-gray-600">Batas: {getExpiryDate(payment.created_at)}</p>}
+                    {payment.payment_status === "completed" && <p className="text-sm text-green-600">✓ Pembayaran Terkonfirmasi</p>}
+                  </div>
                 </div>
               </div>
             </div>
@@ -184,16 +263,27 @@ export default function InvoicePDFContent({ payment }: InvoicePDFContentProps) {
 
         {/* Bank Transfer Method */}
         <div className="border-2 border-gray-300 rounded-lg">
-          <div className="bg-gray-50 p-6 border-b border-gray-300">
-            <h2 className="text-xl font-bold text-gray-900">Metode Pembayaran Transfer Bank</h2>
+          <div className="bg-white p-6 border-b border-gray-300">
+            <h2 className="text-xl font-bold text-gray-900">
+              Metode Pembayaran Transfer Bank
+              {payment.payment_status === "completed" && <span className="text-sm font-normal text-green-600 ml-2">(Sudah Dibayar)</span>}
+            </h2>
           </div>
           <div className="p-6">
             <div className="mb-6">
               <p className="text-gray-700 mb-4">
-                Lakukan pembayaran sebesar <span className="font-bold text-blue-600">{formatToIDR(payment.amount)}</span> tepat 3 digit terakhir (JANGAN dibulatkan) dan tambahkan berita{" "}
-                <span className="font-bold">{payment.invoice_id}</span> sehingga dapat diproses oleh sistem secara otomatis (tidak perlu konfirmasi secara manual).
+                {payment.payment_status === "pending" ? (
+                  <>
+                    Lakukan pembayaran sebesar <span className="font-bold text-blue-600">{formatToIDR(payment.amount)}</span> tepat 3 digit terakhir (JANGAN dibulatkan) dan tambahkan berita{" "}
+                    <span className="font-bold">{payment.invoice_id}</span> sehingga dapat diproses oleh sistem secara otomatis (tidak perlu konfirmasi secara manual).
+                  </>
+                ) : (
+                  <>
+                    Pembayaran sebesar <span className="font-bold text-blue-600">{formatToIDR(payment.amount)}</span> dengan kode berita <span className="font-bold">{payment.invoice_id}</span> telah berhasil diproses.
+                  </>
+                )}
               </p>
-              <p className="text-gray-700 mb-6">Pembayaran dapat dilakukan dengan transfer ke akun berikut:</p>
+              <p className="text-gray-700 mb-6">{payment.payment_status === "pending" ? "Pembayaran dapat dilakukan dengan transfer ke akun berikut:" : "Berikut adalah detail rekening yang digunakan untuk pembayaran:"}</p>
             </div>
 
             <div className="space-y-6">
@@ -213,10 +303,24 @@ export default function InvoicePDFContent({ payment }: InvoicePDFContentProps) {
               ))}
             </div>
 
-            <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="font-semibold text-yellow-800">Penting!</p>
-              <p className="text-yellow-700 mt-1">Jika setelah 15 menit pembayaran yang Anda lakukan dan tagihan Anda belum diproses, silakan konfirmasi secara manual.</p>
-            </div>
+            {payment.payment_status === "pending" && (
+              <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="font-semibold text-yellow-800">Penting!</p>
+                <p className="text-yellow-700 mt-1">Jika setelah 15 menit pembayaran yang Anda lakukan dan tagihan Anda belum diproses, silakan konfirmasi secara manual.</p>
+              </div>
+            )}
+
+            {payment.payment_status === "completed" && (
+              <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-green-800">Pembayaran Berhasil!</p>
+                    <p className="text-green-700 mt-1">Terima kasih atas pembayaran Anda. Anda sekarang dapat mengakses kelas yang telah dibeli.</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
