@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { v4 as uuidv4 } from "uuid";
+import { v7 as uuidv7 } from "uuid";
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     // Create payment record
     const payment = await prisma.payment.create({
       data: {
-        id: uuidv4(),
+        id: uuidv7(),
         user_id: userId,
         course_id: courseId,
         amount: course.price,

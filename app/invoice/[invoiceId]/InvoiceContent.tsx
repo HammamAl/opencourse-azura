@@ -3,18 +3,19 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, Clock, CheckCircle } from "lucide-react";
+import { AlertCircle, Clock, CheckCircle, FileText } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface InvoiceContentProps {
   payment: {
     id: string;
     invoice_id: string;
-    amount: string; // Changed from any to string
+    amount: string;
     payment_status: string;
-    created_at: string; // Changed from Date to string
+    created_at: string;
     course: {
       title: string;
-      price: string; // Changed from any to string
+      price: string;
       cover_image_url: string | null;
       users: {
         name: string;
@@ -32,6 +33,7 @@ interface InvoiceContentProps {
 export default function InvoiceContent({ payment }: InvoiceContentProps) {
   const [selectedBank, setSelectedBank] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const router = useRouter();
 
   const formatToIDR = (amount: string): string => {
     const numAmount = parseFloat(amount);
@@ -96,6 +98,10 @@ export default function InvoiceContent({ payment }: InvoiceContentProps) {
     }
   };
 
+  const handleViewInvoice = () => {
+    router.push(`/invoice/${payment.invoice_id}/detail`);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
@@ -126,8 +132,10 @@ export default function InvoiceContent({ payment }: InvoiceContentProps) {
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold text-gray-900">Anda berhasil melakukan Pemesanan Kelas Manajemen</h1>
-        <p className="text-lg text-gray-600">Keuangan Pribadi Seharga {formatToIDR(payment.amount)}</p>
+        <h1 className="text-2xl font-bold text-gray-900">Anda berhasil melakukan Pemesanan Kelas</h1>
+        <p className="text-lg text-gray-600">
+          {payment.course.title} Seharga {formatToIDR(payment.amount)}
+        </p>
       </div>
 
       {/* Invoice Number */}
@@ -166,7 +174,7 @@ export default function InvoiceContent({ payment }: InvoiceContentProps) {
         </CardContent>
       </Card>
 
-      {/* Payment Deadline */}
+      {/* Payment Deadline - Only show for pending payments */}
       {payment.payment_status === "pending" && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
           <div className="flex items-center gap-2 text-orange-700">
@@ -177,7 +185,20 @@ export default function InvoiceContent({ payment }: InvoiceContentProps) {
         </div>
       )}
 
-      {/* Payment Method Selection */}
+      {/* Invoice Details Button - Always show */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Detail Invoice</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Button variant="outline" className="w-full text-blue-600 border-blue-600 hover:bg-blue-50" onClick={handleViewInvoice}>
+            <FileText className="h-4 w-4 mr-2" />
+            Lihat Invoice Detail
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Payment Method Selection - Only show for pending payments */}
       {payment.payment_status === "pending" && (
         <Card>
           <CardHeader>
@@ -185,9 +206,6 @@ export default function InvoiceContent({ payment }: InvoiceContentProps) {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-4">
-              {/* <Button variant="outline" className="flex-1 text-blue-600 border-blue-600" onClick={() => window.open("/payment/manual", "_blank")}>
-                Lihat Invoice
-              </Button> */}
               <Button className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={handlePayment} disabled={!selectedBank || isProcessing}>
                 {isProcessing ? "Memproses..." : "Konfirmasi Pembayaran"}
               </Button>
@@ -200,10 +218,10 @@ export default function InvoiceContent({ payment }: InvoiceContentProps) {
                   <SelectValue placeholder="Pilih metode pembayaran" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="bca">Bank BCA - 123456789</SelectItem>
-                  <SelectItem value="mandiri">Bank Mandiri - 987654321</SelectItem>
-                  <SelectItem value="bni">Bank BNI - 456789123</SelectItem>
-                  <SelectItem value="bri">Bank BRI - 789123456</SelectItem>
+                  <SelectItem value="bca">Bank BCA - 0127072102</SelectItem>
+                  <SelectItem value="mandiri">Bank Mandiri - 0127072102</SelectItem>
+                  <SelectItem value="bni">Bank BNI - 0127072102</SelectItem>
+                  <SelectItem value="bri">Bank BRI - 0127072102</SelectItem>
                 </SelectContent>
               </Select>
             </div>
