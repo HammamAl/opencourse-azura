@@ -65,7 +65,7 @@ export function CourseDetailsContent({ course, enrollmentCount, instructors }: C
           <p className="text-lg text-text-secondary leading-relaxed">{course.description}</p>
 
           <div className="flex items-center gap-6">
-            <Link href="/register">
+            <Link href={`/cart?courseId=${course.id}`}>
               <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors cursor-pointer">Daftar Sekarang</button>
             </Link>
             <div className="text-text-secondary">
