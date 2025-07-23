@@ -146,7 +146,7 @@ export default function ProfileClient({ user, enrolledCourses }: ProfileClientPr
 
                             {/* Course Info */}
                             <div className="flex-1 min-w-0">
-                              <Link href={`/course/${enrollment.course.id}`} className="block hover:text-blue-600 transition-colors">
+                              <Link href="#" className="block hover:text-blue-600 transition-colors">
                                 <h3 className="font-semibold text-gray-900 line-clamp-2">{enrollment.course.title}</h3>
                               </Link>
 
