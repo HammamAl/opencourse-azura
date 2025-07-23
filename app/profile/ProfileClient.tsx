@@ -124,7 +124,7 @@ export default function ProfileClient({ user, enrolledCourses }: ProfileClientPr
                 <CardHeader>
                   <CardTitle className="text-xl font-bold flex items-center gap-2">
                     <BookOpen className="w-5 h-5" />
-                    Kelas Yang Di Ikuti
+                    Kelas Yang Diikuti
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
