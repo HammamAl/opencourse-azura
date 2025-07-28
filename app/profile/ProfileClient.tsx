@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, BookOpen, User } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
+import EditProfileModal from "@/components/EditProfileModal";
+import ChangePasswordModal from "@/components/ChangePasswordModal";
 
 interface User {
   id: string;
@@ -37,7 +40,11 @@ interface ProfileClientProps {
   enrolledCourses: EnrolledCourse[];
 }
 
-export default function ProfileClient({ user, enrolledCourses }: ProfileClientProps) {
+export default function ProfileClient({ user: initialUser, enrolledCourses }: ProfileClientProps) {
+  const [user, setUser] = useState(initialUser);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -76,6 +83,10 @@ export default function ProfileClient({ user, enrolledCourses }: ProfileClientPr
     }
   };
 
+  const handleUpdateSuccess = (updatedUser: User) => {
+    setUser(updatedUser);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -105,10 +116,10 @@ export default function ProfileClient({ user, enrolledCourses }: ProfileClientPr
 
                 {/* Action Buttons */}
                 <div className="flex justify-center space-x-4 pt-4">
-                  <Button variant="default" className="px-6">
+                  <Button variant="default" className="px-6" onClick={() => setIsEditProfileModalOpen(true)}>
                     Edit my profil
                   </Button>
-                  <Button variant="outline" className="px-6">
+                  <Button variant="outline" className="px-6" onClick={() => setIsChangePasswordModalOpen(true)}>
                     Ganti Password
                   </Button>
                 </div>
@@ -178,7 +189,7 @@ export default function ProfileClient({ user, enrolledCourses }: ProfileClientPr
               </Card>
             </div>
 
-            {/* Right Column - Additional Info (Future Use) */}
+            {/* Right Column */}
             <div>
               <Card>
                 <CardHeader>
@@ -205,6 +216,11 @@ export default function ProfileClient({ user, enrolledCourses }: ProfileClientPr
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <EditProfileModal isOpen={isEditProfileModalOpen} onClose={() => setIsEditProfileModalOpen(false)} user={user} onUpdateSuccess={handleUpdateSuccess} />
+
+      <ChangePasswordModal isOpen={isChangePasswordModalOpen} onClose={() => setIsChangePasswordModalOpen(false)} />
     </div>
   );
 }
