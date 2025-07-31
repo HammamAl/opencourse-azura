@@ -23,6 +23,12 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
+        hostname: "*.blob.core.windows.net",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
         hostname: "hammamal.live",
         port: "",
         pathname: "/**",

@@ -91,9 +91,6 @@ export default function ChangePasswordModal({ isOpen, onClose }: ChangePasswordM
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b">
           <DialogTitle className="text-lg font-semibold">Ganti Password</DialogTitle>
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-6 w-6 p-0">
-            <X className="h-4 w-4" />
-          </Button>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">

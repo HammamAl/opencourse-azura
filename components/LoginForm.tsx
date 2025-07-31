@@ -3,6 +3,7 @@ import { useState } from "react";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 interface LoginFormProps {
   enableRedirection?: boolean;
@@ -13,6 +14,7 @@ export default function LoginForm({ enableRedirection = true }: LoginFormProps) 
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,6 +54,10 @@ export default function LoginForm({ enableRedirection = true }: LoginFormProps) 
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="mb-6">
@@ -79,15 +85,20 @@ export default function LoginForm({ enableRedirection = true }: LoginFormProps) 
           <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
             Password
           </label>
-          <input
-            id="password"
-            type="password"
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
-            placeholder="Masukkan password Anda"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              required
+              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-400"
+              placeholder="Masukkan password Anda"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button type="button" className="absolute inset-y-0 right-0 pr-3 flex items-center hover:bg-gray-50 rounded-r-lg transition-colors duration-200" onClick={togglePasswordVisibility} tabIndex={-1}>
+              {showPassword ? <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" /> : <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />}
+            </button>
+          </div>
         </div>
 
         {error && (
