@@ -3,10 +3,9 @@ import { Configuration } from "webpack";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  serverExternalPackages: ["argon2"],
-  experimental: {
-    serverComponentsExternalPackages: ["@azure/storage-blob"],
-  },
+  // Pindahkan @azure/storage-blob ke serverExternalPackages
+  serverExternalPackages: ["argon2", "@azure/storage-blob"],
+  // Hapus experimental.serverComponentsExternalPackages yang deprecated
   images: {
     remotePatterns: [
       {
@@ -41,7 +40,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // IMPORTANT: Remove trailing slash for Azure deployment
   trailingSlash: false,
   poweredByHeader: false,
   compress: true,
@@ -49,7 +47,6 @@ const nextConfig: NextConfig = {
   httpAgentOptions: {
     keepAlive: true,
   },
-  // Add proper redirects to handle any existing trailing slash URLs
   async redirects() {
     return [
       {
@@ -98,7 +95,13 @@ const nextConfig: NextConfig = {
   },
   webpack: (config: Configuration, { isServer }: { isServer: boolean }) => {
     if (isServer) {
-      config.externals = [...(Array.isArray(config.externals) ? config.externals : []), "@azure/storage-blob"];
+      // Tambahkan externals untuk Azure Storage Blob
+      config.externals = [
+        ...(Array.isArray(config.externals) ? config.externals : []),
+        {
+          "@azure/storage-blob": "commonjs @azure/storage-blob",
+        },
+      ];
     }
     return config;
   },

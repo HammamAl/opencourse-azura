@@ -71,6 +71,12 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          # Tambahkan environment variables yang diperlukan untuk build
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: https://hammamal-elearning-app-prod-fvdua8defrgnece3.indonesiacentral-01.azurewebsites.net
+          # Set empty string untuk Azure Storage agar tidak error saat build
+          AZURE_STORAGE_CONNECTION_STRING: ""
 
       - name: Remove dev dependencies
         run: npm prune --production
@@ -121,9 +127,9 @@ jobs:
         run: |
           echo "🎉 Deployment Summary"
           echo "====================="
-          echo "📅 Deployed at: 2025-07-07 11:57:52"
+          echo "📅 Deployed at: $(date -u '+%Y-%m-%d %H:%M:%S')"
           echo "🌐 App URL: https://hammamal-elearning-app-prod-fvdua8defrgnece3.indonesiacentral-01.azurewebsites.net"
-          echo "👤 Deployed by: HammamAl"
+          echo "👤 Deployed by: ${{ github.actor }}"
           echo "📝 Commit: ${{ github.sha }}"
           echo "🔧 Node Version: ${{ env.NODE_VERSION }}"
           echo "🏢 Azure Region: Indonesia Central"

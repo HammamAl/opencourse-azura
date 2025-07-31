@@ -2,10 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { prisma } from "@/lib/prisma";
-import { BlobServiceClient } from "@azure/storage-blob";
 import { v7 as uuidv7 } from "uuid";
 
-const blobServiceClient = BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING!);
+// Lazy loading untuk Azure Blob Service Client
+async function createBlobServiceClient() {
+  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+
+  if (!connectionString || connectionString.trim() === "") {
+    throw new Error("Azure Storage Connection String is not configured");
+  }
+
+  try {
+    // Dynamic import untuk menghindari error saat build
+    const { BlobServiceClient } = await import("@azure/storage-blob");
+    return BlobServiceClient.fromConnectionString(connectionString);
+  } catch (error) {
+    console.error("Failed to initialize BlobServiceClient:", error);
+    throw new Error("Azure Storage service is not available");
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +28,13 @@ export async function POST(request: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Tidak terauthorisasi" }, { status: 401 });
+    }
+
+    // Check environment variable before proceeding
+    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    if (!connectionString || connectionString.trim() === "") {
+      console.error("Azure Storage Connection String not configured");
+      return NextResponse.json({ error: "Cloud storage tidak tersedia saat ini" }, { status: 503 });
     }
 
     const formData = await request.formData();
@@ -25,20 +47,33 @@ export async function POST(request: NextRequest) {
     // Validasi file type
     const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json({ error: "Tipe file tidak didukung. Gunakan JPG, PNG, GIF, atau WebP" }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "Tipe file tidak didukung. Gunakan JPG, PNG, GIF, atau WebP",
+        },
+        { status: 400 }
+      );
     }
 
     // Validasi file size (5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      return NextResponse.json({ error: "Ukuran file terlalu besar. Maksimal 5MB" }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "Ukuran file terlalu besar. Maksimal 5MB",
+        },
+        { status: 400 }
+      );
     }
 
     // Generate unique filename
-    const fileExtension = file.name.split(".").pop();
+    const fileExtension = file.name.split(".").pop() || "jpg";
     const fileName = `profile-pictures-web/${session.user.id}/${uuidv7()}.${fileExtension}`;
 
     try {
+      // Initialize BlobServiceClient lazily
+      const blobServiceClient = await createBlobServiceClient();
+
       // Upload to Azure Blob Storage
       const containerClient = blobServiceClient.getContainerClient("profile-pictures-web");
 
@@ -88,15 +123,24 @@ export async function POST(request: NextRequest) {
       });
     } catch (azureError) {
       console.error("Azure upload error:", azureError);
-      return NextResponse.json({ error: "Gagal mengupload foto ke cloud storage" }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: "Gagal mengupload foto ke cloud storage",
+        },
+        { status: 500 }
+      );
     }
   } catch (error) {
     console.error("Error uploading profile picture:", error);
-    return NextResponse.json({ error: "Terjadi kesalahan internal server" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Terjadi kesalahan internal server",
+      },
+      { status: 500 }
+    );
   }
 }
 
-// DELETE method untuk menghapus foto profil
 export async function DELETE(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -112,21 +156,38 @@ export async function DELETE(request: NextRequest) {
     });
 
     if (!user?.users_profile_picture_url) {
-      return NextResponse.json({ error: "Tidak ada foto profil untuk dihapus" }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: "Tidak ada foto profil untuk dihapus",
+        },
+        { status: 400 }
+      );
     }
 
-    try {
-      // Extract blob name from URL
-      const url = new URL(user.users_profile_picture_url);
-      const blobName = url.pathname.substring(url.pathname.indexOf("/") + 1);
+    // Check if Azure is available
+    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
+    if (connectionString && connectionString.trim() !== "") {
+      try {
+        // Initialize BlobServiceClient lazily
+        const blobServiceClient = await createBlobServiceClient();
 
-      // Delete from Azure Blob Storage
-      const containerClient = blobServiceClient.getContainerClient("profile-pictures-web");
-      const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-      await blockBlobClient.deleteIfExists();
-    } catch (azureError) {
-      console.error("Azure delete error:", azureError);
-      // Continue to update database even if Azure delete fails
+        // Extract blob name from URL
+        const url = new URL(user.users_profile_picture_url);
+        // For URL like: https://account.blob.core.windows.net/container/path/file.jpg
+        // We need to get everything after the container name
+        const pathParts = url.pathname.split("/");
+        const blobName = pathParts.slice(2).join("/"); // Skip empty string and container name
+
+        // Delete from Azure Blob Storage
+        const containerClient = blobServiceClient.getContainerClient("profile-pictures-web");
+        const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+        await blockBlobClient.deleteIfExists();
+      } catch (azureError) {
+        console.error("Azure delete error:", azureError);
+        // Continue to update database even if Azure delete fails
+      }
+    } else {
+      console.warn("Azure Storage not configured, skipping blob deletion");
     }
 
     // Update database
@@ -153,6 +214,11 @@ export async function DELETE(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error deleting profile picture:", error);
-    return NextResponse.json({ error: "Terjadi kesalahan internal server" }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Terjadi kesalahan internal server",
+      },
+      { status: 500 }
+    );
   }
 }
