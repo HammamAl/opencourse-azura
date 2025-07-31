@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // Upload to Azure Blob Storage
-      const containerClient = blobServiceClient.getContainerClient("profile-pictures");
+      const containerClient = blobServiceClient.getContainerClient("profile-pictures-web");
 
       // Ensure container exists
       await containerClient.createIfNotExists({
@@ -121,7 +121,7 @@ export async function DELETE(request: NextRequest) {
       const blobName = url.pathname.substring(url.pathname.indexOf("/") + 1);
 
       // Delete from Azure Blob Storage
-      const containerClient = blobServiceClient.getContainerClient("profile-pictures");
+      const containerClient = blobServiceClient.getContainerClient("profile-pictures-web");
       const blockBlobClient = containerClient.getBlockBlobClient(blobName);
       await blockBlobClient.deleteIfExists();
     } catch (azureError) {
