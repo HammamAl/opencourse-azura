@@ -9,6 +9,11 @@ const updateProfileSchema = z.object({
   email: z.string().email("Email tidak valid").optional(),
 });
 
+// Helper function to extract first name
+function extractFirstName(fullName: string): string {
+  return fullName.trim().split(/\s+/)[0];
+}
+
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -34,11 +39,15 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Extract first name from full name
+    const firstName = extractFirstName(validatedData.full_name);
+
     // Update user profile
     const updatedUser = await prisma.users.update({
       where: { id: session.user.id },
       data: {
         full_name: validatedData.full_name,
+        name: firstName, // Update name field with first name
         ...(validatedData.email && { email: validatedData.email }),
         updated_at: new Date(),
       },
